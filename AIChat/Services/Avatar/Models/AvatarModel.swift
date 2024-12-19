@@ -6,7 +6,8 @@
 //
 import Foundation
 
-struct AvatarModel {
+// imutable struct 
+struct AvatarModel: Hashable {
     let avatarId: String
     let name: String?
     let characterOption: CharacterOption?
