@@ -18,7 +18,7 @@ struct WelcomeView: View {
                 titleSection
                     .padding(.top, 25)
                 NavigationLink {
-                    OnboardingCompletedView()
+                    OnboardingIntroView()
                 } label: {
                     Text("Get Started")
                         .callToActionButton()
@@ -37,7 +37,7 @@ struct WelcomeView: View {
             Text("AI Chat 👍")
                 .font(.largeTitle)
                 .fontWeight(.bold)
-            Text("Skrivanek Production")
+            Text("Sky Lark Apps")
                 .font(.caption)
                 .foregroundStyle(.secondary)
         }
