@@ -9,26 +9,62 @@ import SwiftUI
 
 struct OnboardingCompletedView: View {
     @Environment(AppState.self) private var rootState
+    @State private var isCompletingProfileSetup: Bool = false
+    var selectedColor: Color = .accent
     var body: some View {
-            VStack {
-                Text("Onboarding Completed")
-                    .frame(maxHeight: .infinity)
-                Button {
-                    // finish onboarding and enter app!
-                    onFinishButtonPressed()
-                } label: {
-                    Text("Finish")
-                        .callToActionButton()
-                }
-
-            }
-            .padding(16)
+        VStack(alignment: .leading, spacing: 12) {
+            Text("Setup Complete !")
+                .font(.largeTitle)
+                .fontWeight(.semibold)
+                .foregroundStyle(selectedColor)
+            
+            Text("We've set up your profile and you're ready to start chatting.")
+                .font(.title)
+                .fontWeight(.medium)
+                .foregroundStyle(.secondary)
         }
+        .toolbar(.hidden, for: .navigationBar)
+        .frame(maxHeight: .infinity)
+        .safeAreaInset(edge: .bottom, content: {
+            ctaButton
+        })
+        .padding(24)
+    }
+    private var ctaButton: some View {
+        Button {
+            // finish onboarding and enter app!
+            onFinishButtonPressed()
+        } label: {
+            ZStack {
+                if isCompletingProfileSetup {
+                    ProgressView()
+                        .tint(.white)
+                } else {
+                    Text("Finish")
+                }
+                
+            }
+            
+        }
+        .callToActionButton()
+        .disabled(isCompletingProfileSetup == true)
+    }
     func onFinishButtonPressed() {
-        rootState.updateViewState(showTabBarView: true)
+        isCompletingProfileSetup = true
+        
+        Task {
+            try await Task.sleep(for: .seconds(3))
+            // try await saveUserProfile(color: selectedColor)
+            isCompletingProfileSetup = false
+            rootState.updateViewState(showTabBarView: true)
+        }
+      
+        
     }
-    }
+}
 #Preview {
-    OnboardingCompletedView()
-        .environment(AppState())
+    NavigationStack {
+        OnboardingCompletedView(selectedColor: .mint)
+            .environment(AppState())
+    }
 }
