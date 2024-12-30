@@ -20,8 +20,8 @@ struct HeroCellView: View {
                     .fill(.accent)
             }
         }
-        .overlay(alignment: .bottomLeading){
-            VStack (alignment: .leading, spacing: 4){
+        .overlay(alignment: .bottomLeading) {
+            VStack(alignment: .leading, spacing: 4) {
                 if let title {
                     Text(title)
                         .font(.headline)
@@ -36,18 +36,7 @@ struct HeroCellView: View {
             .foregroundStyle(.white)
             .padding(16)
             .frame(maxWidth: .infinity, alignment: .leading)
-            .background(
-                LinearGradient(
-                    colors: [
-                        Color.black.opacity(0),
-                        Color.black.opacity(0.3),
-                        Color.black.opacity(0.4)
-                    ],
-                    startPoint: .top,
-                    endPoint: .bottom
-                )
-                )
-        }
+            .addingGradientBackgroundForText()        }
         .cornerRadius(15)
     }
 }

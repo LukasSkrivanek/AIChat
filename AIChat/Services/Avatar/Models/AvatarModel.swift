@@ -107,18 +107,29 @@ struct AvatarDescriptionBuilder {
     }
     
     var characterDescription: String {
-        "A \(characterOption.rawValue) that is \(characterAction.rawValue) in the  \(characterLocation.rawValue)"
+        let prefix = characterOption.startsWithAVowel ? "An" : "A"
+        return "\(prefix) \(characterOption.rawValue) that is \(characterAction.rawValue) in the  \(characterLocation.rawValue)"
            }
+    
 }
-enum CharacterOption: String {
+enum CharacterOption: String, CaseIterable {
     case man, woman, alien, dog, cat
     
     static var `default`: Self {
         .man
     }
+    
+    var startsWithAVowel: Bool {
+        switch self {
+        case .alien:
+            return true
+        default :
+            return false
+        }
+    }
 }
 enum CharacterAction: String {
-    case smiling, sitting, eating, drinking, walking,shopping, studying, working , relaxing, fighting, crying
+    case smiling, sitting, eating, drinking, walking, shopping, studying, working, relaxing, fighting, crying
     
     static var `default`: Self {
         .smiling

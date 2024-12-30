@@ -21,7 +21,7 @@ struct TabCarouselView<Item: Hashable, Content: View>: View {
                         .padding(.horizontal)
                 }
             }
-            .tabViewStyle(.page(indexDisplayMode: .never)) 
+            .tabViewStyle(.page(indexDisplayMode: .never))
             .frame(height: 200)
             
             // Custom Page Indicators (Optional)

@@ -61,7 +61,9 @@ struct OnboardingColorView: View {
         } label: {
             Text("Continue")
                 .callToActionButton()
+                
         }
+        .padding(24)
         
     }
 }
