@@ -59,8 +59,6 @@ struct OnboardingCompletedView: View {
             isCompletingProfileSetup = false
             rootState.updateViewState(showTabBarView: true)
         }
-      
-        
     }
 }
 #Preview {

@@ -123,7 +123,7 @@ enum CharacterOption: String, CaseIterable {
         switch self {
         case .alien:
             return true
-        default :
+        default:
             return false
         }
     }
