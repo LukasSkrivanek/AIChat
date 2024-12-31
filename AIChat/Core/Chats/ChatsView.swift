@@ -13,8 +13,21 @@ struct ChatsView: View {
         NavigationStack {
             List {
                 ForEach(chats) { chat in
-                    Text(chat.id)
+                    ChatRoCellViewBuilder(
+                        currentUserId: nil, // FIXME: Add cuid
+                        chat: chat) {
+                            try? await Task.sleep(for: .seconds(1))
+                            return .mock
+                        } getChatMessage: {
+                            try? await Task.sleep(for: .seconds(1))
+                            return .mock
+                        }
+                        .anyButton(.highlight) {
+                            
+                        }
+                        .removeRowFormatting()
                 }
+                
             }
         }
     }
