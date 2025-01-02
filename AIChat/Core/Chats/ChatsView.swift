@@ -25,10 +25,11 @@ struct ChatsView: View {
                         .anyButton(.highlight) {
                             
                         }
-                        .removeRowFormatting()
+                        .removeListRowFormatting()
                 }
                 
             }
+            .listStyle(PlainListStyle())
         }
     }
 }

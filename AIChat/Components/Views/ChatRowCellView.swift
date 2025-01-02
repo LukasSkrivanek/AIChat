@@ -60,17 +60,17 @@ struct ChatRowCellView: View {
         Color.gray.ignoresSafeArea()
         List {
             ChatRowCellView()
-                .removeRowFormatting()
+                .removeListRowFormatting()
                 
             ChatRowCellView(hasNewChat: false)
-                .removeRowFormatting()
+                .removeListRowFormatting()
                 
             ChatRowCellView(imageName: nil)
-                .removeRowFormatting()
+                .removeListRowFormatting()
             ChatRowCellView(headline: nil)
-                .removeRowFormatting()
+                .removeListRowFormatting()
             ChatRowCellView(subheadline: nil)
-                .removeRowFormatting()
+                .removeListRowFormatting()
         }
     }
 }

@@ -21,10 +21,10 @@ extension View {
         background(.black.opacity(0.001))
     }
     
-    func removeRowFormatting() -> some View {
+    func removeListRowFormatting() -> some View {
         self
             .listRowInsets(EdgeInsets(top: 0, leading: 0, bottom: 0, trailing: 0))
-            .listRowBackground(Color.clear)
+            .listRowBackground(Color(uiColor: .clear))
     }
     
     func addingGradientBackgroundForText() -> some View {
