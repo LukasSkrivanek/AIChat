@@ -22,6 +22,7 @@ struct ChatRowCellView: View {
                         .fill(.secondary.opacity(0.5))
                 }
             }
+            
             .frame(width: 50, height: 50)
             .clipShape(Circle())
             
@@ -41,14 +42,10 @@ struct ChatRowCellView: View {
             
             if hasNewChat {
                 Text("New")
-                    .font(.caption)
-                    .bold()
-                    .foregroundStyle(.white)
-                    .padding(.vertical, 6)
-                    .background(.blue)
-                    .cornerRadius(6)
+                    .badgeButton()
             }
         }
+        
         .padding(.vertical, 12)
         .padding(.horizontal, 8)
         .background(Color(uiColor: UIColor.systemBackground))
@@ -61,10 +58,10 @@ struct ChatRowCellView: View {
         List {
             ChatRowCellView()
                 .removeListRowFormatting()
-                
+            
             ChatRowCellView(hasNewChat: false)
                 .removeListRowFormatting()
-                
+            
             ChatRowCellView(imageName: nil)
                 .removeListRowFormatting()
             ChatRowCellView(headline: nil)

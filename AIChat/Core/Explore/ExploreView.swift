@@ -82,11 +82,13 @@ struct ExploreView: View {
                     
                 }
                 .removeListRowFormatting()
+               
             }
             
         } header: {
             Text("Popular")
         }
+        
     }
 }
 

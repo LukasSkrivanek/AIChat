@@ -1,5 +1,5 @@
 //
-//  CharacterAttributes.swift
+//  AvatarAttributes.swift
 //  AIChat
 //
 //  Created by macbook on 07.01.2025.
@@ -7,29 +7,6 @@
 
 import Foundation
 
-struct AvatarDescriptionBuilder {
-    let characterOption: CharacterOption
-    let characterAction: CharacterAction
-    let characterLocation: CharacterLocation
-    
-    init(characterOption: CharacterOption, characterAction: CharacterAction, characterLocation: CharacterLocation) {
-        self.characterOption = characterOption
-        self.characterAction = characterAction
-        self.characterLocation = characterLocation
-    }
-    
-    init(avatar: AvatarModel) {
-        self.characterOption = avatar.characterOption ?? .default
-        self.characterAction = avatar.characterAction ??  .default
-        self.characterLocation = avatar.characterLocation ?? .default
-    }
-    
-    var characterDescription: String {
-        let prefix = characterOption.startsWithAVowel ? "An" : "A"
-        return "\(prefix) \(characterOption.rawValue) that is \(characterAction.rawValue) in the  \(characterLocation.rawValue)"
-           }
-    
-}
 enum CharacterOption: String, CaseIterable, Hashable {
     case man, woman, alien, dog, cat
     
@@ -59,4 +36,29 @@ enum CharacterLocation: String, CaseIterable, Hashable {
     static var `default`: Self {
         .park
     }
+}
+
+
+struct AvatarDescriptionBuilder {
+    let characterOption: CharacterOption
+    let characterAction: CharacterAction
+    let characterLocation: CharacterLocation
+    
+    init(characterOption: CharacterOption, characterAction: CharacterAction, characterLocation: CharacterLocation) {
+        self.characterOption = characterOption
+        self.characterAction = characterAction
+        self.characterLocation = characterLocation
+    }
+    
+    init(avatar: AvatarModel) {
+        self.characterOption = avatar.characterOption ?? .default
+        self.characterAction = avatar.characterAction ??  .default
+        self.characterLocation = avatar.characterLocation ?? .default
+    }
+    
+    var characterDescription: String {
+        let prefix = characterOption.startsWithAVowel ? "An" : "A"
+        return "\(prefix) \(characterOption.rawValue) that is \(characterAction.rawValue) in the  \(characterLocation.rawValue)"
+           }
+    
 }

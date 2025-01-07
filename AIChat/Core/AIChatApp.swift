@@ -12,6 +12,7 @@ struct AIChatApp: App {
     var body: some Scene {
         WindowGroup {
             AppView()
+      
         }
     }
 }
