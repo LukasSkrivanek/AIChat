@@ -4,7 +4,6 @@
 //
 //  Created by macbook on 07.01.2025.
 //
-
 import SwiftUI
 
 struct ChatView: View {
@@ -12,8 +11,11 @@ struct ChatView: View {
     @State private var avatar: AvatarModel? = .mock
     @State private var currentUser: UserModel? = .mock
     @State private var textFieldText: String = ""
-    @State private var showChatSettings: Bool = false
     @State private var scrollPosition: String?
+    
+    @State private var showAlert: AnyAppAlert?
+    @State private var showChatSettings: AnyAppAlert?
+
     var body: some View {
         VStack(spacing: 0) {
             scrollViewSection
@@ -30,17 +32,8 @@ struct ChatView: View {
                     }
             }
         }
-        .confirmationDialog("What would you like to do", isPresented: $showChatSettings) {
-            Button("Report User / Chat", role: .destructive) {
-                
-            }
-            
-            Button("Delete Chat", role: .destructive) {
-                
-            }
-        } message: {
-            Text(" What would you like to do?")
-        }
+        .showCustomAlert(alert: $showAlert)
+        .showCustomAlert(type: .confirmationDialog, alert: $showChatSettings)
     }
     
     private var scrollViewSection: some View {
@@ -61,7 +54,7 @@ struct ChatView: View {
             .padding(8)
         }
         .defaultScrollAnchor(.bottom)
-        .scrollPosition(id: $scrollPosition,anchor: .center)
+        .scrollPosition(id: $scrollPosition, anchor: .center)
         .animation(.default, value: chatMessages.count)
         .animation(.default, value: scrollPosition)
     }
@@ -90,7 +83,7 @@ struct ChatView: View {
                     RoundedRectangle(cornerRadius: 100)
                         .stroke(Color.gray.opacity(0.3), lineWidth: 1)
                 }
-                )
+            )
             .padding(.horizontal, 12)
             .padding(.vertical, 6)
             .background(Color(uiColor: .secondarySystemBackground))
@@ -98,22 +91,44 @@ struct ChatView: View {
     private func onSendMessagePress() {
         guard let currentUser else { return }
         let content = textFieldText
-        let message = ChatMessageModel(
-            id: UUID().uuidString,
-            chatId: UUID().uuidString,
-            authorId: currentUser.userId,
-            content: content,
-            seenByIds: nil,
-            dateCreated: .now
-        )
-
+        
+        do {
+            try TextValidationHelper.checkTextFieldIsValid(text: content)
+            let message = ChatMessageModel(
+                id: UUID().uuidString,
+                chatId: UUID().uuidString,
+                authorId: currentUser.userId,
+                content: content,
+                seenByIds: nil,
+                dateCreated: .now
+            )
+            
             chatMessages.append(message)
             scrollPosition = message.id
-
-        textFieldText = ""
+            
+            textFieldText = ""
+        } catch {
+            showAlert = AnyAppAlert(error: error)
+               
+        }
     }
     private func onChatSettingsPress() {
-        showChatSettings = true
+        showChatSettings = AnyAppAlert(
+            title: "",
+            subtitle: "What would you like to do?",
+            buttons: {
+                AnyView(
+                    Group {
+                        Button("Report User / Chat", role: .destructive) {
+                            
+                        }
+                        Button("Delete Chat", role: .destructive) {
+                            
+                        }
+                    }
+                )
+            }
+        )
     }
 }
 
