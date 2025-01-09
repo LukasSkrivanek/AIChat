@@ -38,7 +38,6 @@ enum CharacterLocation: String, CaseIterable, Hashable {
     }
 }
 
-
 struct AvatarDescriptionBuilder {
     let characterOption: CharacterOption
     let characterAction: CharacterAction

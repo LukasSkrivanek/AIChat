@@ -104,7 +104,7 @@ struct SettingsView: View {
                 .padding(.leading)
                 .foregroundStyle(.blue)
                 .rowFormatting()
-                .anyButton(.highlight){
+                .anyButton(.highlight) {
                     
                 }
                 
