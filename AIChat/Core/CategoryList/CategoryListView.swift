@@ -11,6 +11,7 @@ struct CategoryListView: View {
     var category: CharacterOption = .alien
     var imageName: String = Constants.randomImage
     @State private var avatars: [AvatarModel] = AvatarModel.mocks
+    @Binding var path: [NavigationPathOption]
     var body: some View {
         List {
             CategoryCellView(
@@ -27,13 +28,20 @@ struct CategoryListView: View {
                     title: avatar.name,
                     subtitle: avatar.characterDescription
                 )
+                .anyButton(.highlight) {
+                    onAvatarPress(avatar: avatar)
+                }
             }
         }
         .ignoresSafeArea()
         .listStyle(.plain)
     }
+    
+    private func onAvatarPress(avatar: AvatarModel) {
+        path.append(.chat(avatarId: avatar.avatarId))
+    }
 }
 
 #Preview {
-    CategoryListView()
+    CategoryListView(path: .constant([]))
 }

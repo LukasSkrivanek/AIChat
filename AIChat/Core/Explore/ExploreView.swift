@@ -7,18 +7,22 @@
 
 import SwiftUI
 
+
+
 struct ExploreView: View {
     @State private var featuredAvatars: [AvatarModel] = AvatarModel.mocks
     @State private var categories: [CharacterOption] = CharacterOption.allCases
     @State private var popularAvatars: [AvatarModel] = AvatarModel.mocks
+    @State private var path: [NavigationPathOption] = []
     var body: some View {
-        NavigationStack {
+        NavigationStack(path: $path) {
             List {
                 featureSection
                 categoriesSection
                 popularSection
             }
             .navigationTitle("Explore")
+            .navigationDestinationForCoreModule(path: $path)
         }
     }
     
@@ -32,7 +36,7 @@ struct ExploreView: View {
                         imageName: avatar.profileImageName
                     )
                     .anyButton(.plain) {
-                        
+                        onAvatarPress(avatar: avatar)
                     }
                 }
             }
@@ -45,21 +49,23 @@ struct ExploreView: View {
         Section {
             ScrollView(.horizontal) {
                 HStack(spacing: 12) {
-                    ForEach(categories, id: \.self) { category in
-                        ZStack {
+                    ForEach(filteredCategories, id: \.self) { category in
+                        let imageName = popularAvatars.first(where: {$0.characterOption == category})?.profileImageName
+                        if let imageName {
                             CategoryCellView(
                                 title: category.rawValue,
-                                imageName: Constants.randomImage
+                                imageName: imageName
                             )
+                            .clipped()
+                            .frame(width: 150)
                             .anyButton(.plain) {
-                                
+                                onCategoryPress(category: category, imageName: imageName)
                             }
+                            
                         }
-                        .clipped()
-                        .frame(width: 150, height: 150)
+                        
                     }
                 }
-                
             }
             .scrollIndicators(.hidden)
             .scrollTargetLayout()
@@ -68,8 +74,15 @@ struct ExploreView: View {
         } header: {
             Text("Categories")
         }
-        
     }
+    
+    /// Filtrované kategorie, které mají odpovídající avatar
+    private var filteredCategories: [CharacterOption] {
+        categories.filter { category in
+            popularAvatars.contains { $0.characterOption == category }
+        }
+    }
+    
     private var popularSection: some View {
         Section {
             ForEach(popularAvatars, id: \.self) { popularAvatar in
@@ -79,10 +92,10 @@ struct ExploreView: View {
                     subtitle: popularAvatar.characterDescription
                 )
                 .anyButton(.highlight) {
-                    
+                    onAvatarPress(avatar: popularAvatar)
                 }
                 .removeListRowFormatting()
-               
+                
             }
             
         } header: {
@@ -90,8 +103,16 @@ struct ExploreView: View {
         }
         
     }
+    private func onAvatarPress(avatar: AvatarModel) {
+        path.append(.chat(avatarId: avatar.avatarId))
+    }
+    private func onCategoryPress(category: CharacterOption, imageName: String) {
+        path.append(.category(category: category, imageName: Constants.randomImage ))
+    }
 }
 
 #Preview {
-    ExploreView()
+    NavigationStack {
+        ExploreView()
+    }
 }

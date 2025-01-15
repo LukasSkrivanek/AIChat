@@ -16,7 +16,8 @@ struct ChatView: View {
     @State private var showAlert: AnyAppAlert?
     @State private var showChatSettings: AnyAppAlert?
     @State private var showProfileModal: Bool = false
-
+    
+    var avatarId: String = AvatarModel.mock.avatarId
     var body: some View {
             VStack(spacing: 0) {
                 scrollViewSection

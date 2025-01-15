@@ -9,12 +9,13 @@ import SwiftUI
 
 struct ChatsView: View {
     @State private var chats: [ChatModel] = ChatModel.mocks
+    @State private var path: [NavigationPathOption] = []
     var body: some View {
-        NavigationStack {
+        NavigationStack(path: $path) {
             List {
                 ForEach(chats) { chat in
                     ChatRoCellViewBuilder(
-                        currentUserId: nil, // FIXME: Add cuid
+                        currentUserId: nil,
                         chat: chat) {
                             try? await Task.sleep(for: .seconds(1))
                             return .mock
@@ -23,14 +24,18 @@ struct ChatsView: View {
                             return .mock
                         }
                         .anyButton(.highlight) {
-                            
+                            onChatPress(chat: chat)
                         }
                         .removeListRowFormatting()
                 }
                 
             }
-            .listStyle(PlainListStyle())
+            .navigationTitle("Chats")
+            .navigationDestinationForCoreModule(path: $path)
         }
+    }
+    private func onChatPress(chat: ChatModel) {
+        path.append(.chat(avatarId: chat.avatarId))
     }
 }
 
