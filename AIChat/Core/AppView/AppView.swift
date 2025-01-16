@@ -10,6 +10,7 @@ import SwiftUI
 // onboarding - signed out
 
 struct AppView: View {
+    @Environment(\.authService) private var authService
     @State var appState: AppState = AppState()
     var body: some View {
         AppViewBuilder(showTabBar: appState.showTabBar,
@@ -19,6 +20,25 @@ struct AppView: View {
             WelcomeView()
         })
         .environment(appState)
+        .task {
+            await checkUserStatus()
+        }
+        
+    }
+    private func checkUserStatus() async {
+        if let user  = authService.getAuthenticatedUser() {
+            // User is authenticated
+            print("User is authenticated: \(user.uId)")
+        } else {
+            // User is not authenticated
+            do {
+               let result =  try await authService.signInAnonymously()
+                // log in to app
+                print("Sign in anonymously: \(result.user.uId)")
+            } catch {
+                print(error)
+            }
+        }
     }
 }
 
