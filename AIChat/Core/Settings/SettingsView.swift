@@ -4,23 +4,16 @@
 //
 //  Created by macbook on 18.12.2024.
 //
-
 import SwiftUI
-
-fileprivate extension View {
-    func rowFormatting() -> some View {
-        self
-            .frame(maxWidth: .infinity, alignment: .leading)
-            .padding(.vertical, 12)
-            
-            .background(Color(uiColor: .systemBackground))
-    }
-}
 
 struct SettingsView: View {
     @Environment(\.dismiss) private var dismiss
+    @Environment(\.authService) private var authService
     @Environment(AppState.self) private var appState
-    @State private var isPremium = true
+    @State private var isPremium: Bool = true
+    @State private var isAnonymousUser: Bool = false
+    @State private var showCreateAccountView: Bool = false
+    
     var body: some View {
         NavigationStack {
             List {
@@ -32,6 +25,15 @@ struct SettingsView: View {
                     .removeListRowFormatting()
             }
             .navigationTitle("Settings")
+            .sheet(isPresented: $showCreateAccountView, onDismiss: {
+                setAnonymousStatus()
+            }, content: {
+                CreateAccountView()
+                    .presentationDetents([.medium])
+            })
+            .onAppear {
+                setAnonymousStatus()
+            }
         }
         .background(Color(uiColor: .systemBackground))
         
@@ -39,13 +41,22 @@ struct SettingsView: View {
     
     private var accountSection: some View {
         Section {
-            Text("Sign out")
-                .padding(.leading)
-                .rowFormatting()
-                .anyButton(.highlight) {
-                    onSignOutPressed()
-                }
-               
+            if isAnonymousUser {
+                Text("Save & back-up account")
+                    .padding(.leading)
+                    .rowFormatting()
+                    .anyButton(.highlight) {
+                        onCreateAccountPressed()
+                    }
+            } else {
+                Text("Sign out")
+                    .padding(.leading)
+                    .rowFormatting()
+                    .anyButton(.highlight) {
+                        onSignOutPressed()
+                    }
+            }
+           
             Text("Delete account")
                 .padding(.leading)
                 .foregroundStyle(.red)
@@ -56,6 +67,7 @@ struct SettingsView: View {
         } header: {
             Text("Account")
         }
+        
     }
     private var purchaseSection: some View {
         Section {
@@ -122,6 +134,22 @@ struct SettingsView: View {
             try? await Task.sleep(for: .seconds(1))
             appState.updateViewState(showTabBarView: false)
         }
+    }
+    private func onCreateAccountPressed() {
+        showCreateAccountView.toggle()
+    }
+    private func setAnonymousStatus() {
+        isAnonymousUser = authService.getAuthenticatedUser()?.isAnonymous == true
+    }
+}
+
+fileprivate extension View {
+    func rowFormatting() -> some View {
+        self
+            .frame(maxWidth: .infinity, alignment: .leading)
+            .padding(.vertical, 12)
+            
+            .background(Color(uiColor: .systemBackground))
     }
 }
 

@@ -10,8 +10,7 @@ enum NavigationPathOption: Hashable {
     case chat(avatarId: String)
     case category(category: CharacterOption, imageName: String)
 }
-
-extension View {
+  extension View {
     func navigationDestinationForCoreModule(path: Binding<[NavigationPathOption]>) -> some View {
         
         self
