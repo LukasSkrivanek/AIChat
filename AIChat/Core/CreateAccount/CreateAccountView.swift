@@ -12,6 +12,7 @@ struct CreateAccountView: View {
     @Environment(\.dismiss) private var dismiss
     var title: String = "Create Account"
     var subtitle: String = "Don't lose your data! Connect to an SSO provider to save your account."
+    var onDidSignIn: ((_ isNewUser: Bool) -> Void )?
     var body: some View {
         VStack(spacing: 24) {
             VStack(alignment: .leading, spacing: 8) {
@@ -41,7 +42,7 @@ struct CreateAccountView: View {
         Task {
             do {
                 let result = try await authService.signInApple()
-                print("Did sign in with apple")
+                onDidSignIn?(result.isNewUser)
                 dismiss()
             } catch {
                 

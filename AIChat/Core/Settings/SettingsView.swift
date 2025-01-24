@@ -13,6 +13,7 @@ struct SettingsView: View {
     @State private var isPremium: Bool = true
     @State private var isAnonymousUser: Bool = false
     @State private var showCreateAccountView: Bool = false
+    @State private var showAlert: AnyAppAlert?
     
     var body: some View {
         NavigationStack {
@@ -35,6 +36,7 @@ struct SettingsView: View {
                 setAnonymousStatus()
             }
         }
+        .showCustomAlert(alert: $showAlert)
         .background(Color(uiColor: .systemBackground))
         
     }
@@ -53,7 +55,7 @@ struct SettingsView: View {
                     .padding(.leading)
                     .rowFormatting()
                     .anyButton(.highlight) {
-                        onSignOutPressed()
+                         onSignOutPressed()
                     }
             }
            
@@ -62,7 +64,7 @@ struct SettingsView: View {
                 .foregroundStyle(.red)
                 .rowFormatting()
                 .anyButton(.highlight) {
-                    
+                    onDeleteAccountPress()
                 }
         } header: {
             Text("Account")
@@ -127,13 +129,45 @@ struct SettingsView: View {
                 .baselineOffset(6)
         }
     }
+    private func onDeleteAccountPress() {
+        showAlert = AnyAppAlert(
+            title: "Delete account?",
+            subtitle: "This action is permanent and cannot be undone. Your data will be deleted from our server. ",
+            buttons: {
+                AnyView(
+                    Button("Delete", role: .destructive) {
+                        onDeleteAccountConfirmed()
+                    })
+                
+            }
+        )
+        
+    }
+    private func onDeleteAccountConfirmed() {
+        Task {
+            do {
+                try await authService.deleteAccount()
+                await dismissScreen()
+            } catch {
+                showAlert = AnyAppAlert(error: error)
+            }
+        }
+    }
     private func onSignOutPressed() {
         // do some logic to sign user out of
-        dismiss()
         Task {
-            try? await Task.sleep(for: .seconds(1))
-            appState.updateViewState(showTabBarView: false)
+            do {
+                try authService.signOut()
+                await dismissScreen()
+            } catch {
+                showAlert = AnyAppAlert(error: error)
+            }
         }
+    }
+    private func dismissScreen() async {
+        dismiss()
+        try? await Task.sleep(for: .seconds(1))
+        appState.updateViewState(showTabBarView: false)
     }
     private func onCreateAccountPressed() {
         showCreateAccountView.toggle()
