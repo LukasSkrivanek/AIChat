@@ -15,17 +15,13 @@ class AppDelegate: NSObject, UIApplicationDelegate {
     return true
   }
 }
-
-
 struct EnvironmentBuilderView<Content:View>: View {
     @ViewBuilder var content: () -> Content
     var body: some View {
         content()
-            .environment(\.authService, FirebaseAuthService())
+            .environment(AuthManager(service: FirebaseAuthService()))
     }
 }
-
-
 @main
 struct AIChatApp: App {
     @UIApplicationDelegateAdaptor(AppDelegate.self) var delegate
