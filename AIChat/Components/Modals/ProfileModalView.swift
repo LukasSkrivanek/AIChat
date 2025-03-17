@@ -18,8 +18,6 @@ struct ProfileModalView: View {
             if let imageName {
                 ImageLoaderView(urlString: imageName, forceTransitionAnimation: true)
                     .aspectRatio(1, contentMode: .fit)
-                
-        
             } else {
                 Image(systemName: "person")
             }
