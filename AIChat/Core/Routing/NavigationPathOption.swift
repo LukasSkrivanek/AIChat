@@ -4,7 +4,9 @@
 //
 //  Created by macbook on 15.01.2025.
 //
+
 import SwiftUI
+import ComposableArchitecture
 
 enum NavigationPathOption: Hashable {
     case chat(avatarId: String)
@@ -17,7 +19,19 @@ enum NavigationPathOption: Hashable {
             .navigationDestination(for: NavigationPathOption.self) { newValue in
                 switch newValue {
                 case .chat(avatarId: let avatarId):
-                    ChatView(avatarId: avatarId)
+                    ChatView(
+                              store: Store(
+                                  initialState: ChatReducer.State(
+                                      chatMessages: [],
+                                      textFieldText: "",
+                                      scrollPosition: nil,
+                                      showProfileModal: false,
+                                      alert: nil
+                                  )
+                              ) {
+                                  ChatReducer()
+                              }
+                          )
                 case .category(category: let category, imageName: let imageName):
                     CategoryListView(category: category, imageName: imageName, path: path)
                 }

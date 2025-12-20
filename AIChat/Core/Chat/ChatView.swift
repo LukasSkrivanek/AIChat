@@ -4,26 +4,20 @@
 //
 //  Created by macbook on 07.01.2025.
 //
+
+import ComposableArchitecture
 import SwiftUI
 
 struct ChatView: View {
-    @State private var chatMessages: [ChatMessageModel] = ChatMessageModel.mocks
-    @State private var avatar: AvatarModel? = .mock
-    @State private var currentUser: UserModel? = .mock
-    @State private var textFieldText: String = ""
-    @State private var scrollPosition: String?
     
-    @State private var showAlert: AnyAppAlert?
-    @State private var showChatSettings: AnyAppAlert?
-    @State private var showProfileModal: Bool = false
-    
-    var avatarId: String = AvatarModel.mock.avatarId
+    @Bindable var store: StoreOf<ChatReducer>
+
     var body: some View {
             VStack(spacing: 0) {
                 scrollViewSection
                 textFieldSection
             }
-        .navigationTitle(avatar?.name ?? "Chat")
+            .navigationTitle(store.avatar?.name ?? "Chat")
         .toolbarTitleDisplayMode(.inline)
         .toolbar {
             ToolbarItem(placement: .topBarTrailing) {
@@ -34,10 +28,10 @@ struct ChatView: View {
                     }
             }
         }
-        .showCustomAlert(alert: $showAlert)
-        .showCustomAlert(type: .confirmationDialog, alert: $showChatSettings)
-        .showModal(showModal: $showProfileModal) {
-            if let avatar {
+        .showCustomAlert(alert: $store.alert)
+        .showCustomAlert(type: .confirmationDialog, alert: $store.alert)
+        .showModal(showModal: $store.showProfileModal) {
+            if let avatar  = store.avatar {
                 profileModal(avatar: avatar)
             }
                
@@ -47,13 +41,15 @@ struct ChatView: View {
     private var scrollViewSection: some View {
         ScrollView {
             LazyVStack(spacing: 24) {
-                ForEach(chatMessages) { message in
-                    let isCurrentUser = message.authorId == currentUser?.userId
+                ForEach(store.chatMessages) { message in
+                    let isCurrentUser = message.authorId == store.currentUser?.userId
                     ChatBubbleViewBuilder(
                         message: message,
                         isCurrentUser: isCurrentUser,
-                        imageName: isCurrentUser ? nil : avatar?.profileImageName,
-                        onnImagePress: onAvatarImagePress
+                        imageName: isCurrentUser ? nil : store.avatar?.profileImageName,
+                        onnImagePress: {
+                            store.send(.toggleProfileModal)
+                        }
                     )
                     .id(message.id)
                     
@@ -63,12 +59,12 @@ struct ChatView: View {
             .padding(8)
         }
         .defaultScrollAnchor(.bottom)
-        .scrollPosition(id: $scrollPosition, anchor: .center)
-        .animation(.default, value: chatMessages.count)
-        .animation(.default, value: scrollPosition)
+        .scrollPosition(id: $store.scrollPosition, anchor: .center)
+        .animation(.default, value: store.chatMessages.count)
+        .animation(.default, value: store.scrollPosition)
     }
     private var textFieldSection: some View {
-        TextField("Say something ...", text: $textFieldText)
+        TextField("Say something ...", text: $store.textFieldText)
             .keyboardType(.alphabet)
             .autocorrectionDisabled()
             .padding(12)
@@ -78,7 +74,7 @@ struct ChatView: View {
                     .font(.system(size: 32))
                     .padding(.trailing, 4)
                     .anyButton(.plain) {
-                        onSendMessagePress()
+                        store.send(.onSendMessageTapped)
                     }
                     .foregroundStyle(.accent)
                 
@@ -103,37 +99,13 @@ struct ChatView: View {
             title: avatar.name,
             subtitle: avatar.characterOption?.rawValue.capitalized,
             headline: avatar.characterDescription) {
-                showProfileModal = false
+                store.send(.toggleProfileModal)
             }
             .padding(40)
             .transition(.move(edge: .leading))
     }
-    private func onSendMessagePress() {
-        guard let currentUser else { return }
-        let content = textFieldText
-        
-        do {
-            try TextValidationHelper.checkTextFieldIsValid(text: content)
-            let message = ChatMessageModel(
-                id: UUID().uuidString,
-                chatId: UUID().uuidString,
-                authorId: currentUser.userId,
-                content: content,
-                seenByIds: nil,
-                dateCreated: .now
-            )
-            
-            chatMessages.append(message)
-            scrollPosition = message.id
-            
-            textFieldText = ""
-        } catch {
-            showAlert = AnyAppAlert(error: error)
-               
-        }
-    }
     private func onChatSettingsPress() {
-        showChatSettings = AnyAppAlert(
+        store.alert = AnyAppAlert(
             title: "",
             subtitle: "What would you like to do?",
             buttons: {
@@ -150,13 +122,23 @@ struct ChatView: View {
             }
         )
     }
-    private func onAvatarImagePress() {
-        showProfileModal = true
-    }
 }
 
 #Preview {
     NavigationStack {
-        ChatView()
+        ChatView(
+            store: Store(
+                initialState: ChatReducer.State(
+                    chatMessages:
+                        ChatMessageModel.mocks,
+                    textFieldText: "",
+                    scrollPosition: nil,
+                    showProfileModal: false,
+                    alert: nil
+                )
+            ) {
+                ChatReducer()
+            }
+        )
     }
 }

@@ -6,7 +6,7 @@
 //
 import SwiftUI
 
-struct AnyAppAlert: Sendable {
+struct AnyAppAlert: Sendable, Equatable {
     var title: String
     var subtitle: String?
     var buttons: @Sendable () -> AnyView
@@ -33,6 +33,11 @@ struct AnyAppAlert: Sendable {
             subtitle: error.localizedDescription,
             buttons: nil
         )
+    }
+    
+    static func == (lhs: Self, rhs: Self) -> Bool {
+        lhs.title == rhs.title &&
+        lhs.subtitle == rhs.subtitle
     }
 }
 
