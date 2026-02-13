@@ -7,6 +7,7 @@
 	objects = {
 
 /* Begin PBXBuildFile section */
+		7473B9852EF6C25D002EF4AA /* ComposableArchitecture in Frameworks */ = {isa = PBXBuildFile; productRef = 7473B9842EF6C25D002EF4AA /* ComposableArchitecture */; };
 		FA44EF6D2D12DC6400AFF3EC /* SDWebImageSwiftUI in Frameworks */ = {isa = PBXBuildFile; productRef = FA44EF6C2D12DC6400AFF3EC /* SDWebImageSwiftUI */; };
 		FAA014B82D38F336007675DB /* FirebaseAuth in Frameworks */ = {isa = PBXBuildFile; productRef = FAA014B72D38F336007675DB /* FirebaseAuth */; };
 		FAA014BA2D38F336007675DB /* FirebaseFirestore in Frameworks */ = {isa = PBXBuildFile; productRef = FAA014B92D38F336007675DB /* FirebaseFirestore */; };
@@ -59,6 +60,7 @@
 			isa = PBXFrameworksBuildPhase;
 			buildActionMask = 2147483647;
 			files = (
+				7473B9852EF6C25D002EF4AA /* ComposableArchitecture in Frameworks */,
 				FAA014D22D392CC9007675DB /* SignInAppleAsync in Frameworks */,
 				FA44EF6D2D12DC6400AFF3EC /* SDWebImageSwiftUI in Frameworks */,
 				FAA014B82D38F336007675DB /* FirebaseAuth in Frameworks */,
@@ -128,6 +130,7 @@
 				FAA014B72D38F336007675DB /* FirebaseAuth */,
 				FAA014B92D38F336007675DB /* FirebaseFirestore */,
 				FAA014D12D392CC9007675DB /* SignInAppleAsync */,
+				7473B9842EF6C25D002EF4AA /* ComposableArchitecture */,
 			);
 			productName = AIChat;
 			productReference = FA44EEC42D103BA100AFF3EC /* AIChat.app */;
@@ -215,6 +218,7 @@
 				FA44EF6B2D12DC6400AFF3EC /* XCRemoteSwiftPackageReference "SDWebImageSwiftUI" */,
 				FAA014B62D38F336007675DB /* XCRemoteSwiftPackageReference "firebase-ios-sdk" */,
 				FAA014D02D392CC9007675DB /* XCRemoteSwiftPackageReference "SignInAppleAsync" */,
+				7473B9832EF6C25D002EF4AA /* XCRemoteSwiftPackageReference "swift-composable-architecture" */,
 			);
 			preferredProjectObjectVersion = 77;
 			productRefGroup = FA44EEC52D103BA100AFF3EC /* Products */;
@@ -621,6 +625,14 @@
 /* End XCConfigurationList section */
 
 /* Begin XCRemoteSwiftPackageReference section */
+		7473B9832EF6C25D002EF4AA /* XCRemoteSwiftPackageReference "swift-composable-architecture" */ = {
+			isa = XCRemoteSwiftPackageReference;
+			repositoryURL = "https://github.com/pointfreeco/swift-composable-architecture";
+			requirement = {
+				kind = upToNextMajorVersion;
+				minimumVersion = 1.23.1;
+			};
+		};
 		FA44EF6B2D12DC6400AFF3EC /* XCRemoteSwiftPackageReference "SDWebImageSwiftUI" */ = {
 			isa = XCRemoteSwiftPackageReference;
 			repositoryURL = "https://github.com/SDWebImage/SDWebImageSwiftUI.git";
@@ -648,6 +660,11 @@
 /* End XCRemoteSwiftPackageReference section */
 
 /* Begin XCSwiftPackageProductDependency section */
+		7473B9842EF6C25D002EF4AA /* ComposableArchitecture */ = {
+			isa = XCSwiftPackageProductDependency;
+			package = 7473B9832EF6C25D002EF4AA /* XCRemoteSwiftPackageReference "swift-composable-architecture" */;
+			productName = ComposableArchitecture;
+		};
 		FA44EF6C2D12DC6400AFF3EC /* SDWebImageSwiftUI */ = {
 			isa = XCSwiftPackageProductDependency;
 			package = FA44EF6B2D12DC6400AFF3EC /* XCRemoteSwiftPackageReference "SDWebImageSwiftUI" */;

@@ -23,7 +23,6 @@ struct FirebaseUserService: UserService {
     }
 }
 
-
 @MainActor
 @Observable
 class UserManager: ObservableObject {

@@ -7,7 +7,7 @@
 
 import SwiftUI
 
-struct UserModel: Codable {
+struct UserModel: Codable, Equatable {
     let userId: String
     let email: String?
     let isAnonymous: Bool?

@@ -44,9 +44,9 @@ class AuthManager {
         try service.signOut()
         auth = nil
     }
-    func deleteAccount() async throws{
+    func deleteAccount() async throws {
     }
 }
-enum AuthError: LocalizedError{
+enum AuthError: LocalizedError {
     case notSignedIn
 }
