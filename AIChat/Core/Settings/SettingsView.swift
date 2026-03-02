@@ -170,7 +170,7 @@ struct SettingsView: View {
     private func dismissScreen() async {
         dismiss()
         try? await Task.sleep(for: .seconds(1))
-        showTabBar.withLock { $0 = false }
+        $showTabBar.withLock { $0 = false }
     }
     private func onCreateAccountPressed() {
         showCreateAccountView.toggle()
