@@ -24,17 +24,16 @@ struct ChatView: View {
                 Image(systemName: "ellipsis")
                     .padding(8)
                     .anyButton {
-                        onChatSettingsPress()
+                       // onChatSettingsPress()
                     }
             }
         }
-        .showCustomAlert(alert: $store.alert)
-        .showCustomAlert(type: .confirmationDialog, alert: $store.alert)
+        .alert(store: store.scope(state: \.$alert, action: \.alert))
+        //.showCustomAlert(type: .confirmationDialog, alert: $store.alert)
         .showModal(showModal: $store.showProfileModal) {
             if let avatar  = store.avatar {
                 profileModal(avatar: avatar)
-            }
-               
+            } 
         }
     }
     
@@ -104,24 +103,16 @@ struct ChatView: View {
             .padding(40)
             .transition(.move(edge: .leading))
     }
-    private func onChatSettingsPress() {
-        store.alert = AnyAppAlert(
-            title: "",
-            subtitle: "What would you like to do?",
-            buttons: {
-                AnyView(
-                    Group {
-                        Button("Report User / Chat", role: .destructive) {
-                            
-                        }
-                        Button("Delete Chat", role: .destructive) {
-                            
-                        }
-                    }
-                )
-            }
-        )
-    }
+   // private func onChatSettingsPress() {
+   //     store.alert = AlertState(
+   //            title: TextState("Možnosti chatu"),
+   //            message: TextState("Co chcete udělat?"),
+  //             buttons: [
+   //                .default(TextState("Report User / Chat"), action: //.send(.alertDismissed)),
+        //           .destructive(TextState("Delete Chat"), action: .send(.alertDismissed))
+          //     ]
+         //  )
+   // }
 }
 
 #Preview {
@@ -133,8 +124,7 @@ struct ChatView: View {
                         ChatMessageModel.mocks,
                     textFieldText: "",
                     scrollPosition: nil,
-                    showProfileModal: false,
-                    alert: nil
+                    showProfileModal: false
                 )
             ) {
                 ChatReducer()

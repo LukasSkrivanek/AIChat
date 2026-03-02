@@ -8,7 +8,6 @@
 import SwiftUI
 
 struct WelcomeView: View {
-    @Environment(AppState.self) private var root
      
     @State private var imageName: String = Constants.randomImage
     @State private var showSignInView: Bool = false
@@ -87,7 +86,6 @@ struct WelcomeView: View {
             // Do nothing, user goes through onboarding
         } else {
             // push into tabBar view
-            root.updateViewState(showTabBarView: true)
         }
     }
     private func onSignInButtonTap() {

@@ -17,24 +17,41 @@ struct ChatReducer {
         var textFieldText = ""
         var scrollPosition: String?
         var showProfileModal = false
-        var alert: AnyAppAlert?
         var currentUser: UserModel? = .mock
         var avatar: AvatarModel? = .mock
         var avatarId: String = AvatarModel.mock.avatarId
+        @Presents var alert: AlertState<Action.Alert>?
+        @Presents var confirmationDialog: ConfirmationDialogState<Action>?
     }
     
-    enum Action: BindableAction {
+    enum Action: BindableAction, Equatable {
         case textChanged(String)
         case onChatSettingsTapped
         case deleteChatteTapped
         case reportUserTapped
         case onSendMessageTapped
         case toggleProfileModal
-        case alertDismissed
         case binding(BindingAction<State>)
+        case alert(PresentationAction<Alert>) // wrap nested alert actions in PresentationAction
+        case confirmationDialog(PresentationState<ConfirmationDialog>)
+
+        @CasePathable
+        enum Alert: Equatable {
+            case alertCancelTapped
+            case alertConfirmTapped
+        }
+        
+        @CasePathable
+        enum ConfirmationDialog: Equatable {
+            case confirmationDialogCancelTapped
+            case confirmationDialogConfirmTapped
+        }
     }
-    
-    var body: some ReducerOf<Self> {
+
+    @Dependency(\.uuid) var uuid
+    @Dependency(\.date) var date
+
+    var body: some Reducer<State, Action> {
         BindingReducer()
         Reduce { state, action in
             switch action {
@@ -50,14 +67,26 @@ struct ChatReducer {
             case .reportUserTapped:
                 // TODO: Implementation
                 return .none
-            case .alertDismissed:
+
+            case .alert(.presented(.alertCancelTapped)):
                 state.alert = nil
                 return .none
+
+            case .alert(.presented(.alertConfirmTapped)):
+                state.alert = nil
+                return .none
+
+            case .alert(.dismiss):
+                // Alert dismissed by system; state will be nilled by presentation reducer automatically.
+                return .none
+
             case .toggleProfileModal:
                 state.showProfileModal.toggle()
                 return .none
+
             case .binding:
                 return .none
+
             case .onSendMessageTapped:
                 guard let currentUser = state.currentUser else {
                     return .none
@@ -66,12 +95,12 @@ struct ChatReducer {
                 do {
                     try TextValidationHelper.checkTextFieldIsValid(text: content)
                     let message = ChatMessageModel(
-                        id: UUID().uuidString,
-                        chatId: UUID().uuidString,
+                        id: uuid().uuidString,
+                        chatId: uuid().uuidString,
                         authorId: currentUser.userId,
                         content: content,
                         seenByIds: nil,
-                        dateCreated: .now
+                        dateCreated: date()
                     )
                     
                     state.chatMessages.append(message)
@@ -79,11 +108,25 @@ struct ChatReducer {
                     
                     state.textFieldText = ""
                 } catch {
-                    state.alert = AnyAppAlert(error: error)
+                    state.alert = AlertState {
+                        TextState("Alert!")
+                    } actions: {
+                        ButtonState(role: .cancel, action: .send(.alertCancelTapped)) {
+                            TextState("Cancel")
+                        }
+                        ButtonState(action: .send(.alertConfirmTapped)) {
+                            TextState("OK")
+                        }
+                    } message: {
+                        TextState((error as? LocalizedError)?.errorDescription ?? "This is an alert")
+                    }
                 }
+            case .confirmationDialog:
+                return .none
             }
             return .none
         }
-        
+        // Integrate presentation for alerts (no child reducer needed)
     }
 }
+

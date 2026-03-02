@@ -6,10 +6,14 @@
 //
 
 import SwiftUI
+import ComposableArchitecture
 
 struct OnboardingCompletedView: View {
-    @Environment(AppState.self) private var rootState
-    @State private var isCompletingProfileSetup: Bool = false
+    @State
+    private var isCompletingProfileSetup: Bool = false
+    // TODO: Rewrite with OnboardingReducer
+    @Shared(.appStorage("showTabBar"))
+    private var showTabBar = false
     var selectedColor: Color = .accent
     var body: some View {
         VStack(alignment: .leading, spacing: 12) {
@@ -44,13 +48,12 @@ struct OnboardingCompletedView: View {
             try await Task.sleep(for: .seconds(3))
             // try await saveUserProfile(color: selectedColor)
             isCompletingProfileSetup = false
-            rootState.updateViewState(showTabBarView: true)
+            $showTabBar.withLock { $0 = true }
         }
     }
 }
 #Preview {
     NavigationStack {
         OnboardingCompletedView(selectedColor: .mint)
-            .environment(AppState())
     }
 }

@@ -72,5 +72,4 @@ struct OnboardingColorView: View {
     NavigationStack {
         OnboardingColorView()
     }
-    .environment(AppState())
 }

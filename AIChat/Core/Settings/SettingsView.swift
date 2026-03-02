@@ -5,12 +5,14 @@
 //  Created by macbook on 18.12.2024.
 //
 import SwiftUI
+import ComposableArchitecture
 
 struct SettingsView: View {
     @Environment(\.dismiss) private var dismiss
     @Environment(AuthManager.self) private var authManager
 
-    @Environment(AppState.self) private var appState
+    @Shared(.appStorage("showTabBar"))
+    private var showTabBar = false
     @State private var isPremium: Bool = true
     @State private var isAnonymousUser: Bool = false
     @State private var showCreateAccountView: Bool = false
@@ -168,7 +170,7 @@ struct SettingsView: View {
     private func dismissScreen() async {
         dismiss()
         try? await Task.sleep(for: .seconds(1))
-        appState.updateViewState(showTabBarView: false)
+        showTabBar.withLock { $0 = false }
     }
     private func onCreateAccountPressed() {
         showCreateAccountView.toggle()
@@ -191,17 +193,14 @@ fileprivate extension View {
 #Preview("No auth") {
     SettingsView()
         .environment(AuthManager(service: MockAuthService(user: nil )))
-        .environment(AppState())
 }
 
 #Preview("Anonymous") {
     SettingsView()
         .environment(AuthManager(service: MockAuthService(user: UserAuthInfo.mock(isAnonymous: true))))
-        .environment(AppState())
 }
 
 #Preview("No Anonymous") {
     SettingsView()
         .environment(AuthManager(service: MockAuthService(user: UserAuthInfo.mock(isAnonymous: false))))
-        .environment(AppState())
 }
