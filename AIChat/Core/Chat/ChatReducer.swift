@@ -27,7 +27,7 @@ struct ChatReducer {
     enum Action: BindableAction, Equatable {
         case textChanged(String)
         case onChatSettingsTapped
-        case deleteChatteTapped
+        case deleteChatTapped
         case reportUserTapped
         case onSendMessageTapped
         case toggleProfileModal
@@ -61,7 +61,7 @@ struct ChatReducer {
                 
             case .onChatSettingsTapped:
                 return .none
-            case .deleteChatteTapped:
+            case .deleteChatTapped:
                 // TODO: Implementation
                 return .none
             case .reportUserTapped:
