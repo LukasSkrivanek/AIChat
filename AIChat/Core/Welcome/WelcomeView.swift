@@ -11,6 +11,7 @@ struct WelcomeView: View {
      
     @State private var imageName: String = Constants.randomImage
     @State private var showSignInView: Bool = false
+    @AppStorage("showTabBar") private var showTabBar: Bool = false
     var body: some View {
         NavigationStack {
             VStack {
@@ -85,7 +86,9 @@ struct WelcomeView: View {
         if isNewUser {
             // Do nothing, user goes through onboarding
         } else {
-            // push into tabBar view
+            // Existing user: transition to the main tab bar experience
+            showTabBar = true
+            showSignInView = false
         }
     }
     private func onSignInButtonTap() {
