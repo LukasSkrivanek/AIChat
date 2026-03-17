@@ -22,7 +22,7 @@ jobs:
         run: |
           xcodebuild \
             -scheme AIChat \
-            -destination 'generic/platform=iOS Simulator' \
+            -destination 'platform=iOS Simulator,name=iPhone 16' \
             test \
             -resultBundlePath build/test-results.xcresult
       
