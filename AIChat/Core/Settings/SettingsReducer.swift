@@ -6,11 +6,13 @@
 //
 
 import ComposableArchitecture
+import Foundation
 
 @Reducer
 struct SettingsReducer {
 
     @Dependency(\.authManager) var authManager
+    @Dependency(\.dismiss) var dismiss
 
     @ObservableState
     struct State: Equatable {
@@ -20,7 +22,6 @@ struct SettingsReducer {
         
         var isPremium: Bool = true
         var isAnonymousUser: Bool = false
-        var shouldDismiss: Bool = false
         
         @Presents
         var createAccount: CreateAccountReducer.State?
@@ -36,7 +37,8 @@ struct SettingsReducer {
         case deleteAccountButtonTapped
         case signOutResult(Result<Void, any Error>)
         case deleteAccountResult(Result<Void, any Error>)
-        case didDismiss
+        case signOutCompleted
+        case deleteAccountCompleted
 
         case createAccount(PresentationAction<CreateAccountReducer.Action>)
     
@@ -65,7 +67,12 @@ struct SettingsReducer {
                 }
 
             case .signOutResult(.success):
-                state.shouldDismiss = true
+                state.$showTabBar.withLock { $0 = false }
+                return .run { _ in
+                    await dismiss()
+                }
+
+            case .signOutCompleted:
                 return .none
 
             case .signOutResult(.failure(let error)):
@@ -95,11 +102,12 @@ struct SettingsReducer {
                 }
 
             case .deleteAccountResult(.success):
-                state.shouldDismiss = true
-                return .none
-
-            case .didDismiss:
                 state.$showTabBar.withLock { $0 = false }
+                return .run { _ in
+                    await dismiss()
+                }
+
+            case .deleteAccountCompleted:
                 return .none
 
             case .deleteAccountResult(.failure(let error)):
@@ -110,6 +118,9 @@ struct SettingsReducer {
 
             case .createAccount(.dismiss):
                 state.isAnonymousUser = authManager.auth?.isAnonymous == true
+                return .none
+
+            case .alert(.dismiss):
                 return .none
 
             case .createAccount:

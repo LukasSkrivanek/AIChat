@@ -6,6 +6,7 @@
 //
 
 import SwiftUI
+import ComposableArchitecture
 
 struct TabBarView: View {
     var body: some View {
@@ -26,8 +27,12 @@ struct TabBarView: View {
                 Label("Chats", systemImage: "bubble.left.and.bubble.right.fill")
             }
             NavigationStack {
-                ProfileView()
-                    .navigationTitle("Profile")
+                ProfileView(
+                    store: Store(initialState: ProfileReducer.State()) {
+                        ProfileReducer()
+                    }
+                )
+                .navigationTitle("Profile")
             }
             .tabItem {
                 Label("Profile", systemImage: "person.fill")
