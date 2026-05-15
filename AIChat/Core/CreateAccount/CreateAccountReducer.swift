@@ -20,7 +20,7 @@ struct CreateAccountReducer {
         var isLoading = false
     }
 
-    enum Action: Equatable {
+    enum Action {
         case signInAppleButtonTapped
         case signInAppleSucceeded(isNewUser: Bool)
         case signInAppleFailed(String)

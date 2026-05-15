@@ -11,43 +11,48 @@ import ComposableArchitecture
 @Reducer
 struct AppReducer {
 
-    @Dependency(\.userManager)
-    private var userManager
-    @Dependency(\.authManager)
-    private var authManager
+    @Dependency(\.userManager) var userManager
+    @Dependency(\.authManager) var authManager
 
     @ObservableState
-    struct AppState: Equatable {
+    struct State: Equatable {
         @Shared(.appStorage("showTabBar"))
         var showTabBar = false
         var isLoading = true
         var authError: String?
+        var welcome = WelcomeReducer.State()
     }
 
-    enum AppAction: Equatable {
+    enum Action {
         case onAppear
         case showTabBarChanged(Bool)
         case userStatusCheckSucceeded
         case userStatusCheckFailed(String)
+        case welcome(WelcomeReducer.Action)
     }
 
-    var body: some Reducer<AppState, AppAction> {
+    var body: some Reducer<State, Action> {
+        Scope(state: \.welcome, action: \.welcome) {
+            WelcomeReducer()
+        }
         Reduce { state, action in
             switch action {
             case .onAppear:
                 state.isLoading = true
                 return .run { send in
                     do {
+                        try await checkUserStatus()
                         await send(.userStatusCheckSucceeded)
                     } catch {
                         await send(.userStatusCheckFailed(error.localizedDescription))
                     }
                 }
-                
+
             case .showTabBarChanged(let showTabBar):
                 if !showTabBar {
                     return .run { send in
                         do {
+                            try await checkUserStatus()
                             await send(.userStatusCheckSucceeded)
                         } catch {
                             await send(.userStatusCheckFailed(error.localizedDescription))
@@ -68,6 +73,9 @@ struct AppReducer {
                     try await Task.sleep(nanoseconds: 5_000_000_000)
                     await send(.onAppear)
                 }
+
+            case .welcome:
+                return .none
             }
         }
     }

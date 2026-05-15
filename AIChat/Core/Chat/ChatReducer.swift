@@ -21,10 +21,10 @@ struct ChatReducer {
         var avatar: AvatarModel? = .mock
         var avatarId: String = AvatarModel.mock.avatarId
         @Presents var alert: AlertState<Action.Alert>?
-        @Presents var confirmationDialog: ConfirmationDialogState<Action>?
+        @Presents var confirmationDialog: ConfirmationDialogState<Action.ConfirmationDialog>?
     }
     
-    enum Action: BindableAction, Equatable {
+    enum Action: BindableAction {
         case textChanged(String)
         case onChatSettingsTapped
         case deleteChatTapped
@@ -32,15 +32,15 @@ struct ChatReducer {
         case onSendMessageTapped
         case toggleProfileModal
         case binding(BindingAction<State>)
-        case alert(PresentationAction<Alert>) // wrap nested alert actions in PresentationAction
-        case confirmationDialog(PresentationState<ConfirmationDialog>)
+        case alert(PresentationAction<Alert>)
+        case confirmationDialog(PresentationAction<ConfirmationDialog>)
 
         @CasePathable
         enum Alert: Equatable {
             case alertCancelTapped
             case alertConfirmTapped
         }
-        
+
         @CasePathable
         enum ConfirmationDialog: Equatable {
             case confirmationDialogCancelTapped

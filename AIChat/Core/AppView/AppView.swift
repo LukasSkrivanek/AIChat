@@ -41,7 +41,7 @@ struct AppView: View {
                 TabBarView()
             },
             onboardingView: {
-                WelcomeView(store: <#StoreOf<WelcomeReducer>#>)
+                WelcomeView(store: store.scope(state: \.welcome, action: \.welcome))
             }
         )
         .onAppear {
