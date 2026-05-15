@@ -20,7 +20,7 @@ struct ProfileReducer {
         var showCreateAvatar: Bool = false
         @Presents var settings: SettingsReducer.State?
     }
-
+    
     enum Action {
         case task
         case loadDataResult([AvatarModel])
@@ -31,6 +31,13 @@ struct ProfileReducer {
         case deleteAvatar(IndexSet)
         case pathChanged([NavigationPathOption])
         case settings(PresentationAction<SettingsReducer.Action>)
+        case delegate(Delegate)
+
+        @CasePathable
+        enum Delegate: Equatable {
+            case userSignedOut
+            case userDeletedAccount
+        }
     }
 
     var body: some Reducer<State, Action> {
@@ -39,7 +46,6 @@ struct ProfileReducer {
             case .task:
                 state.isLoading = true
                 return .run { send in
-                    try? await Task.sleep(for: .seconds(4))
                     await send(.loadDataResult(AvatarModel.mocks))
                 }
 
@@ -73,7 +79,15 @@ struct ProfileReducer {
                 state.path = path
                 return .none
 
-            case .settings:
+            case .settings(.presented(.delegate(.userSignedOut))):
+                state.settings = nil
+                return .send(.delegate(.userSignedOut))
+
+            case .settings(.presented(.delegate(.userDeletedAccount))):
+                state.settings = nil
+                return .send(.delegate(.userDeletedAccount))
+
+            case .settings, .delegate:
                 return .none
             }
         }

@@ -9,6 +9,9 @@ import SwiftUI
 import ComposableArchitecture
 
 struct TabBarView: View {
+
+    let store: StoreOf<TabBarReducer>
+
     var body: some View {
         TabView {
             NavigationStack {
@@ -18,7 +21,7 @@ struct TabBarView: View {
             .tabItem {
                 Label("Explore", systemImage: "eyes")
             }
-            
+
             NavigationStack {
                 ChatsView()
                     .navigationTitle("Chats")
@@ -26,13 +29,10 @@ struct TabBarView: View {
             .tabItem {
                 Label("Chats", systemImage: "bubble.left.and.bubble.right.fill")
             }
+
             NavigationStack {
-                ProfileView(
-                    store: Store(initialState: ProfileReducer.State()) {
-                        ProfileReducer()
-                    }
-                )
-                .navigationTitle("Profile")
+                ProfileView(store: store.scope(state: \.profile, action: \.profile))
+                    .navigationTitle("Profile")
             }
             .tabItem {
                 Label("Profile", systemImage: "person.fill")
@@ -42,5 +42,9 @@ struct TabBarView: View {
 }
 
 #Preview {
-    TabBarView()
+    TabBarView(
+        store: Store(initialState: TabBarReducer.State()) {
+            TabBarReducer()
+        }
+    )
 }

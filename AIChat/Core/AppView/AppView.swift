@@ -35,15 +35,14 @@ struct AppView: View {
     @Bindable var store: StoreOf<AppReducer>
 
     var body: some View {
-        AppViewBuilder(
-            showTabBar: store.showTabBar,
-            tabbarView: {
-                TabBarView()
-            },
-            onboardingView: {
-                WelcomeView(store: store.scope(state: \.welcome, action: \.welcome))
+        Group {
+            switch store.scope(state: \.destination, action: \.destination).case {
+            case .welcome(let welcomeStore):
+                WelcomeView(store: welcomeStore)
+            case .tabBar(let tabBarStore):
+                TabBarView(store: tabBarStore)
             }
-        )
+        }
         .onAppear {
             store.send(.onAppear)
         }
