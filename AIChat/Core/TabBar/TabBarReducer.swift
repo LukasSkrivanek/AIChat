@@ -10,20 +10,19 @@ import ComposableArchitecture
 @Reducer
 struct TabBarReducer {
 
+    enum Tab: Hashable {
+        case explore, chats, profile
+    }
+
     @ObservableState
     struct State: Equatable {
+        var selectedTab: Tab = .explore
         var profile = ProfileReducer.State()
     }
 
     enum Action {
+        case selectedTabChanged(Tab)
         case profile(ProfileReducer.Action)
-        case delegate(Delegate)
-
-        @CasePathable
-        enum Delegate: Equatable {
-            case userSignedOut
-            case userDeletedAccount
-        }
     }
 
     var body: some Reducer<State, Action> {
@@ -32,11 +31,10 @@ struct TabBarReducer {
         }
         Reduce { state, action in
             switch action {
-            case .profile(.delegate(.userSignedOut)):
-                return .send(.delegate(.userSignedOut))
-            case .profile(.delegate(.userDeletedAccount)):
-                return .send(.delegate(.userDeletedAccount))
-            case .profile, .delegate:
+            case .selectedTabChanged(let tab):
+                state.selectedTab = tab
+                return .none
+            case .profile:
                 return .none
             }
         }

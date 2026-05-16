@@ -36,22 +36,13 @@ struct SettingsReducer {
         case deleteAccountButtonTapped
         case signOutResult(Result<Void, any Error>)
         case deleteAccountResult(Result<Void, any Error>)
-        case signOutCompleted
-        case deleteAccountCompleted
 
         case createAccount(PresentationAction<CreateAccountReducer.Action>)
         case alert(PresentationAction<Alert>)
-        case delegate(Delegate)
 
         @CasePathable
         enum Alert: Equatable {
             case deleteAccountConfirmed
-        }
-
-        @CasePathable
-        enum Delegate: Equatable {
-            case userSignedOut
-            case userDeletedAccount
         }
     }
 
@@ -73,9 +64,6 @@ struct SettingsReducer {
 
             case .signOutResult(.success):
                 state.$showTabBar.withLock { $0 = false }
-                return .send(.delegate(.userSignedOut))
-
-            case .signOutCompleted:
                 return .none
 
             case .signOutResult(.failure(let error)):
@@ -106,9 +94,6 @@ struct SettingsReducer {
 
             case .deleteAccountResult(.success):
                 state.$showTabBar.withLock { $0 = false }
-                return .send(.delegate(.userDeletedAccount))
-
-            case .deleteAccountCompleted:
                 return .none
 
             case .deleteAccountResult(.failure(let error)):
@@ -128,8 +113,6 @@ struct SettingsReducer {
                 return .none
 
             case .alert:
-                return .none
-            case .delegate:
                 return .none
             }
         }
