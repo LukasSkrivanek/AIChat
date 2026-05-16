@@ -13,16 +13,23 @@ struct WelcomeReducer {
     @ObservableState
     struct State: Equatable {
         @Presents var createAccount: CreateAccountReducer.State?
+        @Presents var onboarding: OnboardingReducer.State?
     }
 
     enum Action {
+        case getStartedButtonTapped
         case signInButtonTapped
         case createAccount(PresentationAction<CreateAccountReducer.Action>)
+        case onboarding(PresentationAction<OnboardingReducer.Action>)
     }
 
     var body: some Reducer<State, Action> {
         Reduce { state, action in
             switch action {
+            case .getStartedButtonTapped:
+                state.onboarding = OnboardingReducer.State()
+                return .none
+
             case .signInButtonTapped:
                 state.createAccount = CreateAccountReducer.State(
                     title: "Sign in",
@@ -35,12 +42,15 @@ struct WelcomeReducer {
                 _ = isNewUser
                 return .none
 
-            case .createAccount:
+            case .createAccount, .onboarding:
                 return .none
             }
         }
         .ifLet(\.$createAccount, action: \.createAccount) {
             CreateAccountReducer()
+        }
+        .ifLet(\.$onboarding, action: \.onboarding) {
+            OnboardingReducer()
         }
     }
 }

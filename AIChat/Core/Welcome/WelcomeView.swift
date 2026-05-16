@@ -20,8 +20,8 @@ struct WelcomeView: View {
                     .frame(maxHeight: .infinity)
                 titleSection
                     .padding(.top, 25)
-                NavigationLink {
-                    OnboardingIntroView()
+                Button {
+                    store.send(.getStartedButtonTapped)
                 } label: {
                     Text("Get Started")
                         .callToActionButton()
@@ -31,6 +31,9 @@ struct WelcomeView: View {
                     .padding(.bottom, 8)
                 policySection
                     .foregroundStyle(.accent)
+            }
+            .navigationDestination(item: $store.scope(state: \.onboarding, action: \.onboarding)) { onboardingStore in
+                OnboardingIntroView(store: onboardingStore)
             }
         }
         .sheet(item: $store.scope(state: \.createAccount, action: \.createAccount)) { createAccountStore in
