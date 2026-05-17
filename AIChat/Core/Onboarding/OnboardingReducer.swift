@@ -11,9 +11,10 @@ import SwiftUI
 @Reducer
 struct OnboardingReducer {
 
-    enum Path: Hashable {
+    enum Step: Equatable {
         case colorSelection
         case completed
+        case intro
     }
 
     enum ProfileColor: String, CaseIterable, Equatable, Hashable, Identifiable {
@@ -58,21 +59,21 @@ struct OnboardingReducer {
     @ObservableState
     struct State: Equatable {
         var isCompletingProfileSetup = false
-        var path: [Path] = []
         var selectedColor: ProfileColor?
+        var step: Step = .intro
 
         let profileColors: [ProfileColor]
 
         init(
             isCompletingProfileSetup: Bool = false,
-            path: [Path] = [],
             profileColors: [ProfileColor] = ProfileColor.allCases,
-            selectedColor: ProfileColor? = nil
+            selectedColor: ProfileColor? = nil,
+            step: Step = .intro
         ) {
             self.isCompletingProfileSetup = isCompletingProfileSetup
-            self.path = path
             self.profileColors = profileColors
             self.selectedColor = selectedColor
+            self.step = step
         }
     }
 
@@ -82,7 +83,6 @@ struct OnboardingReducer {
         case finishButtonTapped
         case finishProfileSetupCompleted
         case getStartedButtonTapped
-        case pathChanged([Path])
         case profileColorTapped(ProfileColor)
 
         @CasePathable
@@ -98,7 +98,7 @@ struct OnboardingReducer {
                 guard state.selectedColor != nil else {
                     return .none
                 }
-                state.path.append(.completed)
+                state.step = .completed
                 return .none
 
             case .finishButtonTapped:
@@ -113,11 +113,7 @@ struct OnboardingReducer {
                 return .send(.delegate(.didFinish))
 
             case .getStartedButtonTapped:
-                state.path = [.colorSelection]
-                return .none
-
-            case .pathChanged(let path):
-                state.path = path
+                state.step = .colorSelection
                 return .none
 
             case .profileColorTapped(let color):

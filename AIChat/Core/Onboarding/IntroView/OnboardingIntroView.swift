@@ -12,49 +12,45 @@ struct OnboardingIntroView: View {
     let store: StoreOf<OnboardingReducer>
 
     var body: some View {
-        NavigationStack(
-            path: Binding(
-                get: { store.path },
-                set: { store.send(.pathChanged($0)) }
-            )
-        ) {
-            VStack {
-                Group {
-                    Text("Make your own ")
-                    +
-                    Text("avatars ")
-                        .foregroundStyle(.accent)
-                        .fontWeight(.semibold)
-                    +
-                    Text("and chat\n with them!\n\nHave ")
-                    +
-                    Text("real conversations ")
-                        .foregroundStyle(.accent)
-                        .fontWeight(.semibold)
-                    +
-                    Text("with AI generated responses ")
-                }
-                .baselineOffset(6)
-                .frame(maxHeight: .infinity)
-                .padding(24)
+        Group {
+            switch store.step {
+            case .intro:
+                VStack {
+                    Group {
+                        Text("Make your own ")
+                        +
+                        Text("avatars ")
+                            .foregroundStyle(.accent)
+                            .fontWeight(.semibold)
+                        +
+                        Text("and chat\n with them!\n\nHave ")
+                        +
+                        Text("real conversations ")
+                            .foregroundStyle(.accent)
+                            .fontWeight(.semibold)
+                        +
+                        Text("with AI generated responses ")
+                    }
+                    .baselineOffset(6)
+                    .frame(maxHeight: .infinity)
+                    .padding(24)
 
-                Button {
-                    store.send(.getStartedButtonTapped)
-                } label: {
-                    Text("Continue")
-                        .callToActionButton()
+                    Button {
+                        store.send(.getStartedButtonTapped)
+                    } label: {
+                        Text("Continue")
+                            .callToActionButton()
+                    }
+                    .padding(24)
+                    .font(.title3)
+                    .toolbar(.hidden, for: .navigationBar)
                 }
-                .padding(24)
-                .font(.title3)
-                .toolbar(.hidden, for: .navigationBar)
-            }
-            .navigationDestination(for: OnboardingReducer.Path.self) { path in
-                switch path {
-                case .colorSelection:
-                    OnboardingColorView(store: store)
-                case .completed:
-                    OnboardingCompletedView(store: store)
-                }
+
+            case .colorSelection:
+                OnboardingColorView(store: store)
+
+            case .completed:
+                OnboardingCompletedView(store: store)
             }
         }
     }
