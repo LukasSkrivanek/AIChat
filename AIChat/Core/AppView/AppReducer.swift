@@ -11,11 +11,26 @@ import ComposableArchitecture
 @Reducer
 struct AppReducer {
 
+    @Reducer
+    struct Loading {
+        @ObservableState
+        struct State: Equatable {}
+
+        enum Action {}
+
+        var body: some Reducer<State, Action> {
+            Reduce { _, _ in
+                .none
+            }
+        }
+    }
+
     @Reducer(state: .equatable)
     enum Destination {
-        case welcome(WelcomeReducer)
+        case loading(Loading)
         case onboarding(OnboardingReducer)
         case tabBar(TabBarReducer)
+        case welcome(WelcomeReducer)
     }
 
     @Dependency(\.userManager) var userManager
@@ -24,23 +39,25 @@ struct AppReducer {
 
     @ObservableState
     struct State: Equatable {
-        var isLoading = true
         var authError: String?
-        @Presents var destination: Destination.State? = .welcome(WelcomeReducer.State())
+        var destination: Destination.State = .welcome(WelcomeReducer.State())
     }
 
     enum Action {
-        case destination(PresentationAction<Destination.Action>)
+        case destination(Destination.Action)
         case onAppear
         case userStatusCheckSucceeded
         case userStatusCheckFailed(String)
     }
 
     var body: some Reducer<State, Action> {
+        Scope(state: \.destination, action: \.destination) {
+            Destination.body
+        }
         Reduce { state, action in
             switch action {
             case .onAppear:
-                state.isLoading = true
+                state.destination = .loading(Loading.State())
                 return .run { send in
                     do {
                         try await checkUserStatus()
@@ -51,7 +68,6 @@ struct AppReducer {
                 }
 
             case .userStatusCheckSucceeded:
-                state.isLoading = false
                 state.authError = nil
                 state.destination = onboardingStatus.hasCompletedOnboarding()
                     ? .tabBar(TabBarReducer.State())
@@ -59,18 +75,18 @@ struct AppReducer {
                 return .none
 
             case .userStatusCheckFailed(let errorMessage):
-                state.isLoading = false
                 state.authError = errorMessage
+                state.destination = .welcome(WelcomeReducer.State())
                 return .run { send in
                     try await Task.sleep(nanoseconds: 5_000_000_000)
                     await send(.onAppear)
                 }
 
-            case .destination(.presented(.welcome(.delegate(.showOnboarding)))):
+            case .destination(.welcome(.delegate(.showOnboarding))):
                 state.destination = .onboarding(OnboardingReducer.State())
                 return .none
 
-            case .destination(.presented(.welcome(.delegate(.didSignIn(let isNewUser))))):
+            case .destination(.welcome(.delegate(.didSignIn(let isNewUser)))):
                 if isNewUser || !onboardingStatus.hasCompletedOnboarding() {
                     state.destination = .onboarding(OnboardingReducer.State())
                 } else {
@@ -78,23 +94,20 @@ struct AppReducer {
                 }
                 return .none
 
-            case .destination(.presented(.onboarding(.delegate(.didFinish)))):
+            case .destination(.onboarding(.delegate(.didFinish))):
                 state.destination = .tabBar(TabBarReducer.State())
                 return .run { _ in
                     await onboardingStatus.setHasCompletedOnboarding(true)
                 }
 
-            case .destination(.presented(.tabBar(.profile(.settings(.presented(.delegate(.didSignOut))))))),
-                .destination(.presented(.tabBar(.profile(.settings(.presented(.delegate(.didDeleteAccount))))))):
+            case .destination(.tabBar(.profile(.settings(.presented(.delegate(.didSignOut)))))),
+                .destination(.tabBar(.profile(.settings(.presented(.delegate(.didDeleteAccount)))))):
                 state.destination = .welcome(WelcomeReducer.State())
                 return .none
 
             case .destination:
                 return .none
             }
-        }
-        .ifLet(\.$destination, action: \.destination) {
-            Destination.body
         }
     }
 

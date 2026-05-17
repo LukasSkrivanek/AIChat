@@ -37,28 +37,28 @@ struct AppView: View {
     var body: some View {
         Group {
             switch store.destination {
-            case .none:
-                EmptyView()
+            case .loading:
+                ProgressView()
 
-            case .some(.welcome):
+            case .welcome:
                 if let welcomeStore = store.scope(
-                    state: \.destination?.welcome,
+                    state: \.destination.welcome,
                     action: \.destination.welcome
                 ) {
                     WelcomeView(store: welcomeStore)
                 }
 
-            case .some(.onboarding):
+            case .onboarding:
                 if let onboardingStore = store.scope(
-                    state: \.destination?.onboarding,
+                    state: \.destination.onboarding,
                     action: \.destination.onboarding
                 ) {
                     OnboardingIntroView(store: onboardingStore)
                 }
 
-            case .some(.tabBar):
+            case .tabBar:
                 if let tabBarStore = store.scope(
-                    state: \.destination?.tabBar,
+                    state: \.destination.tabBar,
                     action: \.destination.tabBar
                 ) {
                     TabBarView(store: tabBarStore)
