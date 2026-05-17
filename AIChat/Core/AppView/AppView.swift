@@ -35,23 +35,46 @@ struct AppView: View {
     @Bindable var store: StoreOf<AppReducer>
 
     var body: some View {
-        WelcomeView(store: store.scope(state: \.welcome, action: \.welcome))
-            .fullScreenCover(item: $store.scope(state: \.onboarding, action: \.onboarding)) { onboardingStore in
-                OnboardingIntroView(store: onboardingStore)
-            }
-            .fullScreenCover(item: $store.scope(state: \.tabBar, action: \.tabBar)) { tabBarStore in
-                TabBarView(store: tabBarStore)
-            }
-            .onAppear {
-                store.send(.onAppear)
-            }
-            .overlay {
-                if let error = store.authError {
-                    VStack {
-                        Text("Error: \(error)")
-                            .foregroundColor(.red)
-                    }
+        Group {
+            switch store.destination {
+            case .none:
+                EmptyView()
+
+            case .some(.welcome):
+                if let welcomeStore = store.scope(
+                    state: \.destination?.welcome,
+                    action: \.destination.welcome
+                ) {
+                    WelcomeView(store: welcomeStore)
+                }
+
+            case .some(.onboarding):
+                if let onboardingStore = store.scope(
+                    state: \.destination?.onboarding,
+                    action: \.destination.onboarding
+                ) {
+                    OnboardingIntroView(store: onboardingStore)
+                }
+
+            case .some(.tabBar):
+                if let tabBarStore = store.scope(
+                    state: \.destination?.tabBar,
+                    action: \.destination.tabBar
+                ) {
+                    TabBarView(store: tabBarStore)
                 }
             }
+        }
+        .onAppear {
+            store.send(.onAppear)
+        }
+        .overlay {
+            if let error = store.authError {
+                VStack {
+                    Text("Error: \(error)")
+                        .foregroundColor(.red)
+                }
+            }
+        }
     }
 }

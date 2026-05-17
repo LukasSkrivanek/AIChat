@@ -2,7 +2,7 @@
 //  OnboardingReducer.swift
 //  AIChat
 //
-//  Created by OpenAI Codex on 16.05.2026.
+//  Created by Skrivanek, Lukas on 16.05.2026.
 //
 
 import ComposableArchitecture

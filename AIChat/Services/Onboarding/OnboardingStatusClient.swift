@@ -2,7 +2,7 @@
 //  OnboardingStatusClient.swift
 //  AIChat
 //
-//  Created by OpenAI Codex on 17.05.2026.
+//  Created by Skrivanek, Lukas on 17.05.2026.
 //
 
 import ComposableArchitecture

@@ -11,6 +11,13 @@ import ComposableArchitecture
 @Reducer
 struct AppReducer {
 
+    @Reducer(state: .equatable)
+    enum Destination {
+        case welcome(WelcomeReducer)
+        case onboarding(OnboardingReducer)
+        case tabBar(TabBarReducer)
+    }
+
     @Dependency(\.userManager) var userManager
     @Dependency(\.authManager) var authManager
     @Dependency(\.onboardingStatus) var onboardingStatus
@@ -19,89 +26,75 @@ struct AppReducer {
     struct State: Equatable {
         var isLoading = true
         var authError: String?
-        var welcome = WelcomeReducer.State()
-        @Presents var onboarding: OnboardingReducer.State?
-        @Presents var tabBar: TabBarReducer.State?
+        @Presents var destination: Destination.State? = .welcome(WelcomeReducer.State())
     }
 
     enum Action {
+        case destination(PresentationAction<Destination.Action>)
         case onAppear
-        case onboarding(PresentationAction<OnboardingReducer.Action>)
         case userStatusCheckSucceeded
         case userStatusCheckFailed(String)
-        case welcome(WelcomeReducer.Action)
-        case tabBar(PresentationAction<TabBarReducer.Action>)
     }
 
     var body: some Reducer<State, Action> {
-        CombineReducers {
-            Scope(state: \.welcome, action: \.welcome) {
-                WelcomeReducer()
-            }
-            Reduce { state, action in
-                switch action {
-                case .onAppear:
-                    state.isLoading = true
-                    return .run { send in
-                        do {
-                            try await checkUserStatus()
-                            await send(.userStatusCheckSucceeded)
-                        } catch {
-                            await send(.userStatusCheckFailed(error.localizedDescription))
-                        }
+        Reduce { state, action in
+            switch action {
+            case .onAppear:
+                state.isLoading = true
+                return .run { send in
+                    do {
+                        try await checkUserStatus()
+                        await send(.userStatusCheckSucceeded)
+                    } catch {
+                        await send(.userStatusCheckFailed(error.localizedDescription))
                     }
-
-                case .userStatusCheckSucceeded:
-                    state.isLoading = false
-                    state.authError = nil
-                    state.tabBar = onboardingStatus.hasCompletedOnboarding() ? TabBarReducer.State() : nil
-                    return .none
-
-                case .userStatusCheckFailed(let errorMessage):
-                    state.isLoading = false
-                    state.authError = errorMessage
-                    return .run { send in
-                        try await Task.sleep(nanoseconds: 5_000_000_000)
-                        await send(.onAppear)
-                    }
-
-                case .welcome(.delegate(.showOnboarding)):
-                    state.onboarding = OnboardingReducer.State()
-                    return .none
-
-                case .welcome(.delegate(.didSignIn(let isNewUser))):
-                    if isNewUser || !onboardingStatus.hasCompletedOnboarding() {
-                        state.onboarding = OnboardingReducer.State()
-                        state.tabBar = nil
-                    } else {
-                        state.onboarding = nil
-                        state.tabBar = TabBarReducer.State()
-                    }
-                    return .none
-
-                case .onboarding(.presented(.delegate(.didFinish))):
-                    state.onboarding = nil
-                    state.isLoading = true
-                    return .run { send in
-                        await onboardingStatus.setHasCompletedOnboarding(true)
-                        await send(.onAppear)
-                    }
-
-                case .tabBar(.presented(.profile(.settings(.presented(.delegate(.didSignOut)))))),
-                    .tabBar(.presented(.profile(.settings(.presented(.delegate(.didDeleteAccount)))))):
-                    state.tabBar = nil
-                    return .none
-
-                case .welcome, .onboarding, .tabBar:
-                    return .none
                 }
+
+            case .userStatusCheckSucceeded:
+                state.isLoading = false
+                state.authError = nil
+                state.destination = onboardingStatus.hasCompletedOnboarding()
+                    ? .tabBar(TabBarReducer.State())
+                    : .welcome(WelcomeReducer.State())
+                return .none
+
+            case .userStatusCheckFailed(let errorMessage):
+                state.isLoading = false
+                state.authError = errorMessage
+                return .run { send in
+                    try await Task.sleep(nanoseconds: 5_000_000_000)
+                    await send(.onAppear)
+                }
+
+            case .destination(.presented(.welcome(.delegate(.showOnboarding)))):
+                state.destination = .onboarding(OnboardingReducer.State())
+                return .none
+
+            case .destination(.presented(.welcome(.delegate(.didSignIn(let isNewUser))))):
+                if isNewUser || !onboardingStatus.hasCompletedOnboarding() {
+                    state.destination = .onboarding(OnboardingReducer.State())
+                } else {
+                    state.destination = .tabBar(TabBarReducer.State())
+                }
+                return .none
+
+            case .destination(.presented(.onboarding(.delegate(.didFinish)))):
+                state.destination = .tabBar(TabBarReducer.State())
+                return .run { _ in
+                    await onboardingStatus.setHasCompletedOnboarding(true)
+                }
+
+            case .destination(.presented(.tabBar(.profile(.settings(.presented(.delegate(.didSignOut))))))),
+                .destination(.presented(.tabBar(.profile(.settings(.presented(.delegate(.didDeleteAccount))))))):
+                state.destination = .welcome(WelcomeReducer.State())
+                return .none
+
+            case .destination:
+                return .none
             }
         }
-        .ifLet(\.$onboarding, action: \.onboarding) {
-            OnboardingReducer()
-        }
-        .ifLet(\.$tabBar, action: \.tabBar) {
-            TabBarReducer()
+        .ifLet(\.$destination, action: \.destination) {
+            Destination.body
         }
     }
 
