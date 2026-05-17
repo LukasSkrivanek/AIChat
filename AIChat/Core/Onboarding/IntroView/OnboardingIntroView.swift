@@ -57,9 +57,5 @@ struct OnboardingIntroView: View {
 }
 
 #Preview {
-    OnboardingIntroView(
-        store: Store(initialState: OnboardingReducer.State()) {
-            OnboardingReducer()
-        }
-    )
+    OnboardingFlowPreviewView(store: OnboardingFlowPreview.store())
 }
