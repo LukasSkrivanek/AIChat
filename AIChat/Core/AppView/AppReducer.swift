@@ -11,23 +11,8 @@ import ComposableArchitecture
 @Reducer
 struct AppReducer {
 
-    @Reducer
-    struct Loading {
-        @ObservableState
-        struct State: Equatable {}
-
-        enum Action {}
-
-        var body: some Reducer<State, Action> {
-            Reduce { _, _ in
-                .none
-            }
-        }
-    }
-
     @Reducer(state: .equatable)
     enum Destination {
-        case loading(Loading)
         case onboarding(OnboardingReducer)
         case tabBar(TabBarReducer)
         case welcome(WelcomeReducer)
@@ -40,6 +25,7 @@ struct AppReducer {
     @ObservableState
     struct State: Equatable {
         var authError: String?
+        var isLoading = false
         var destination: Destination.State = .welcome(WelcomeReducer.State())
     }
 
@@ -57,7 +43,7 @@ struct AppReducer {
         Reduce { state, action in
             switch action {
             case .onAppear:
-                state.destination = .loading(Loading.State())
+                state.isLoading = true
                 return .run { send in
                     do {
                         try await checkUserStatus()
@@ -68,6 +54,7 @@ struct AppReducer {
                 }
 
             case .userStatusCheckSucceeded:
+                state.isLoading = false
                 state.authError = nil
                 state.destination = onboardingStatus.hasCompletedOnboarding()
                     ? .tabBar(TabBarReducer.State())
@@ -75,6 +62,7 @@ struct AppReducer {
                 return .none
 
             case .userStatusCheckFailed(let errorMessage):
+                state.isLoading = false
                 state.authError = errorMessage
                 state.destination = .welcome(WelcomeReducer.State())
                 return .run { send in
