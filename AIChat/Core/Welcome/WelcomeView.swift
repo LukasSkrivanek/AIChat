@@ -32,9 +32,6 @@ struct WelcomeView: View {
                 policySection
                     .foregroundStyle(.accent)
             }
-            .navigationDestination(item: $store.scope(state: \.onboarding, action: \.onboarding)) { onboardingStore in
-                OnboardingIntroView(store: onboardingStore)
-            }
         }
         .sheet(item: $store.scope(state: \.createAccount, action: \.createAccount)) { createAccountStore in
             CreateAccountView(store: createAccountStore)

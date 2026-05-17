@@ -13,22 +13,26 @@ struct WelcomeReducer {
     @ObservableState
     struct State: Equatable {
         @Presents var createAccount: CreateAccountReducer.State?
-        @Presents var onboarding: OnboardingReducer.State?
     }
 
     enum Action {
+        case delegate(Delegate)
         case getStartedButtonTapped
         case signInButtonTapped
         case createAccount(PresentationAction<CreateAccountReducer.Action>)
-        case onboarding(PresentationAction<OnboardingReducer.Action>)
+
+        @CasePathable
+        enum Delegate: Equatable {
+            case didSignIn(isNewUser: Bool)
+            case showOnboarding
+        }
     }
 
     var body: some Reducer<State, Action> {
         Reduce { state, action in
             switch action {
             case .getStartedButtonTapped:
-                state.onboarding = OnboardingReducer.State()
-                return .none
+                return .send(.delegate(.showOnboarding))
 
             case .signInButtonTapped:
                 state.createAccount = CreateAccountReducer.State(
@@ -38,19 +42,14 @@ struct WelcomeReducer {
                 return .none
 
             case .createAccount(.presented(.delegate(.didSignIn(let isNewUser)))):
-                // TODO: handle sign in result (navigate to tabBar or onboarding)
-                _ = isNewUser
-                return .none
+                return .send(.delegate(.didSignIn(isNewUser: isNewUser)))
 
-            case .createAccount, .onboarding:
+            case .createAccount, .delegate:
                 return .none
             }
         }
         .ifLet(\.$createAccount, action: \.createAccount) {
             CreateAccountReducer()
-        }
-        .ifLet(\.$onboarding, action: \.onboarding) {
-            OnboardingReducer()
         }
     }
 }

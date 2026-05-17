@@ -57,10 +57,6 @@ struct OnboardingReducer {
 
     @ObservableState
     struct State: Equatable {
-
-        @Shared(.appStorage("showTabBar"))
-        var showTabBar = false
-
         var isCompletingProfileSetup = false
         var path: [Path] = []
         var selectedColor: ProfileColor?
@@ -82,11 +78,17 @@ struct OnboardingReducer {
 
     enum Action {
         case continueFromColorButtonTapped
+        case delegate(Delegate)
         case finishButtonTapped
         case finishProfileSetupCompleted
         case getStartedButtonTapped
         case pathChanged([Path])
         case profileColorTapped(ProfileColor)
+
+        @CasePathable
+        enum Delegate: Equatable {
+            case didFinish
+        }
     }
 
     var body: some Reducer<State, Action> {
@@ -108,8 +110,7 @@ struct OnboardingReducer {
 
             case .finishProfileSetupCompleted:
                 state.isCompletingProfileSetup = false
-                state.$showTabBar.withLock { $0 = true }
-                return .none
+                return .send(.delegate(.didFinish))
 
             case .getStartedButtonTapped:
                 state.path = [.colorSelection]
@@ -121,6 +122,9 @@ struct OnboardingReducer {
 
             case .profileColorTapped(let color):
                 state.selectedColor = color
+                return .none
+
+            case .delegate:
                 return .none
             }
         }

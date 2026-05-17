@@ -15,13 +15,9 @@ struct SettingsReducer {
 
     @ObservableState
     struct State: Equatable {
-    
-        @Shared(.appStorage("showTabBar"))
-        var showTabBar = false
-        
         var isPremium: Bool = true
         var isAnonymousUser: Bool = false
-        
+
         @Presents
         var createAccount: CreateAccountReducer.State?
         @Presents
@@ -36,6 +32,7 @@ struct SettingsReducer {
         case deleteAccountButtonTapped
         case signOutResult(Result<Void, any Error>)
         case deleteAccountResult(Result<Void, any Error>)
+        case delegate(Delegate)
 
         case createAccount(PresentationAction<CreateAccountReducer.Action>)
         case alert(PresentationAction<Alert>)
@@ -43,6 +40,12 @@ struct SettingsReducer {
         @CasePathable
         enum Alert: Equatable {
             case deleteAccountConfirmed
+        }
+
+        @CasePathable
+        enum Delegate: Equatable {
+            case didDeleteAccount
+            case didSignOut
         }
     }
 
@@ -63,8 +66,7 @@ struct SettingsReducer {
                 }
 
             case .signOutResult(.success):
-                state.$showTabBar.withLock { $0 = false }
-                return .none
+                return .send(.delegate(.didSignOut))
 
             case .signOutResult(.failure(let error)):
                 state.alert = AlertState { TextState("Error") } message: {
@@ -93,8 +95,7 @@ struct SettingsReducer {
                 }
 
             case .deleteAccountResult(.success):
-                state.$showTabBar.withLock { $0 = false }
-                return .none
+                return .send(.delegate(.didDeleteAccount))
 
             case .deleteAccountResult(.failure(let error)):
                 state.alert = AlertState { TextState("Error") } message: {
@@ -112,7 +113,7 @@ struct SettingsReducer {
             case .createAccount:
                 return .none
 
-            case .alert:
+            case .alert, .delegate:
                 return .none
             }
         }

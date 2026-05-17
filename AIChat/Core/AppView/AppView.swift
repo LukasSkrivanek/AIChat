@@ -36,14 +36,14 @@ struct AppView: View {
 
     var body: some View {
         WelcomeView(store: store.scope(state: \.welcome, action: \.welcome))
+            .fullScreenCover(item: $store.scope(state: \.onboarding, action: \.onboarding)) { onboardingStore in
+                OnboardingIntroView(store: onboardingStore)
+            }
             .fullScreenCover(item: $store.scope(state: \.tabBar, action: \.tabBar)) { tabBarStore in
                 TabBarView(store: tabBarStore)
             }
             .onAppear {
                 store.send(.onAppear)
-            }
-            .onChange(of: store.showTabBar) { _, showTabBar in
-                store.send(.showTabBarChanged(showTabBar))
             }
             .overlay {
                 if let error = store.authError {
