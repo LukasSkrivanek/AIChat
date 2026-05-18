@@ -20,8 +20,8 @@ struct WelcomeView: View {
                     .frame(maxHeight: .infinity)
                 titleSection
                     .padding(.top, 25)
-                NavigationLink {
-                    OnboardingIntroView()
+                Button {
+                    store.send(.getStartedButtonTapped)
                 } label: {
                     Text("Get Started")
                         .callToActionButton()

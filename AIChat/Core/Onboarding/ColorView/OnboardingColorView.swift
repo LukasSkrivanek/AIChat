@@ -5,11 +5,12 @@
 //  Created by macbook on 19.12.2024.
 //
 
+import ComposableArchitecture
 import SwiftUI
 
 struct OnboardingColorView: View {
-    @State private var selectedColor: Color?
-    let profileColors: [Color] = [.red, .green, .orange, .blue, .purple, .mint, .cyan, .teal, .indigo]
+    let store: StoreOf<OnboardingReducer>
+
     var body: some View {
         ScrollView {
             colorGrid
@@ -18,17 +19,17 @@ struct OnboardingColorView: View {
         .toolbar(.hidden, for: .navigationBar)
         .safeAreaInset(edge: .bottom, alignment: .center, spacing: 16, content: {
             ZStack {
-                if let selectedColor {
-                    ctaButton(selectedColor: selectedColor)
+                if store.selectedColor != nil {
+                    ctaButton
                         .transition(AnyTransition.move(edge: .bottom))
                 }
-                
             }
             .padding(24)
             .background(Color(uiColor: .systemBackground))
         })
-        .animation(.smooth, value: selectedColor)
+        .animation(.smooth, value: store.selectedColor)
     }
+
     private var colorGrid: some View {
         LazyVGrid(
             columns: Array(repeating: GridItem(.flexible(), spacing: 16), count: 3),
@@ -39,37 +40,40 @@ struct OnboardingColorView: View {
                             Text("Select a profile color")
                     .font(.headline)
                 ) {
-                    ForEach(profileColors, id: \.self) { loopedColor in
+                    ForEach(store.profileColors) { loopedColor in
                         Circle()
                             .fill(.accent)
                             .overlay {
-                                loopedColor
+                                loopedColor.color
                                     .clipShape(Circle())
-                                    .padding(selectedColor == loopedColor ? 10 : 0)
+                                    .padding(store.selectedColor == loopedColor ? 10 : 0)
                             }
                             .onTapGesture {
-                                selectedColor = loopedColor
+                                store.send(.profileColorTapped(loopedColor))
                             }
-                        
                     }
                 }
             }
     }
-    private func ctaButton(selectedColor: Color) -> some View {
-        NavigationLink {
-            OnboardingCompletedView(selectedColor: selectedColor)
+
+    private var ctaButton: some View {
+        Button {
+            store.send(.continueFromColorButtonTapped)
         } label: {
             Text("Continue")
                 .callToActionButton()
-                
         }
         .padding(24)
-        
     }
 }
 
 #Preview {
     NavigationStack {
-        OnboardingColorView()
+        OnboardingColorView(
+            store: OnboardingFlowPreview.store(
+                selectedColor: .mint,
+                step: .colorSelection
+            )
+        )
     }
 }

@@ -40,5 +40,5 @@ struct MockAuthService: AuthService {
     func deleteAccount() async throws {
         
     }
-    
+
 }

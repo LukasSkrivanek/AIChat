@@ -5,23 +5,19 @@
 //  Created by macbook on 18.12.2024.
 //
 
-import SwiftUI
 import ComposableArchitecture
+import SwiftUI
 
 struct OnboardingCompletedView: View {
-    @State
-    private var isCompletingProfileSetup: Bool = false
-    // TODO: Rewrite with OnboardingReducer
-    @Shared(.appStorage("showTabBar"))
-    private var showTabBar = false
-    var selectedColor: Color = .accent
+    let store: StoreOf<OnboardingReducer>
+
     var body: some View {
         VStack(alignment: .leading, spacing: 12) {
             Text("Setup Complete !")
                 .font(.largeTitle)
                 .fontWeight(.semibold)
-                .foregroundStyle(selectedColor)
-            
+                .foregroundStyle(store.selectedColor?.color ?? .accent)
+
             Text("We've set up your profile and you're ready to start chatting.")
                 .font(.title)
                 .fontWeight(.medium)
@@ -31,29 +27,22 @@ struct OnboardingCompletedView: View {
         .frame(maxHeight: .infinity)
         .safeAreaInset(edge: .bottom, content: {
             AsyncCallToActionButton(
-                isLoading: isCompletingProfileSetup,
+                isLoading: store.isCompletingProfileSetup,
                 title: "Finish") {
-                    onFinishButtonPressed()
+                    store.send(.finishButtonTapped)
                 }
-              
         })
-       
         .padding(24)
     }
-      
-    func onFinishButtonPressed() {
-        isCompletingProfileSetup = true
-        
-        Task {
-            try await Task.sleep(for: .seconds(3))
-            // try await saveUserProfile(color: selectedColor)
-            isCompletingProfileSetup = false
-            $showTabBar.withLock { $0 = true }
-        }
-    }
 }
+
 #Preview {
     NavigationStack {
-        OnboardingCompletedView(selectedColor: .mint)
+        OnboardingCompletedView(
+            store: OnboardingFlowPreview.store(
+                selectedColor: .mint,
+                step: .completed
+            )
+        )
     }
 }
