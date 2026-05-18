@@ -7,6 +7,7 @@
 
 import SwiftUI
 import Firebase
+import ComposableArchitecture
 
 class AppDelegate: NSObject, UIApplicationDelegate {
   func application(_ application: UIApplication, didFinishLaunchingWithOptions launchOptions: [UIApplication.LaunchOptionsKey: Any]? = nil) -> Bool {
@@ -19,16 +20,16 @@ class AppDelegate: NSObject, UIApplicationDelegate {
 @main
 struct AIChatApp: App {
     @UIApplicationDelegateAdaptor(AppDelegate.self) var delegate
+    let store = Store(
+        initialState: AppReducer.State(),
+        reducer: {
+            AppReducer()
+        }
+    )
+
     var body: some Scene {
         WindowGroup {
-            AppView(
-                store: .init(
-                    initialState: AppReducer.State(),
-                    reducer: {
-                        AppReducer()
-                    }
-                )
-            )
+            AppView(store: store)
         }
     }
 }

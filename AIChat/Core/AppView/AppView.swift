@@ -20,7 +20,7 @@ extension DependencyValues {
 }
 
 extension AuthManager: DependencyKey {
-    static let liveValue = AuthManager(service: MockAuthService())
+    static let liveValue = AuthManager(service: FirebaseAuthService())
 }
 
 extension DependencyValues {
@@ -36,33 +36,32 @@ struct AppView: View {
 
     var body: some View {
         Group {
-            if store.isLoading {
+            switch store.destination {
+            case .launching:
                 ProgressView()
-            } else {
-                switch store.destination {
-                case .welcome:
-                    if let welcomeStore = store.scope(
-                        state: \.destination.welcome,
-                        action: \.destination.welcome
-                    ) {
-                        WelcomeView(store: welcomeStore)
-                    }
 
-                case .onboarding:
-                    if let onboardingStore = store.scope(
-                        state: \.destination.onboarding,
-                        action: \.destination.onboarding
-                    ) {
-                        OnboardingIntroView(store: onboardingStore)
-                    }
+            case .welcome:
+                if let welcomeStore = store.scope(
+                    state: \.destination.welcome,
+                    action: \.destination.welcome
+                ) {
+                    WelcomeView(store: welcomeStore)
+                }
 
-                case .tabBar:
-                    if let tabBarStore = store.scope(
-                        state: \.destination.tabBar,
-                        action: \.destination.tabBar
-                    ) {
-                        TabBarView(store: tabBarStore)
-                    }
+            case .onboarding:
+                if let onboardingStore = store.scope(
+                    state: \.destination.onboarding,
+                    action: \.destination.onboarding
+                ) {
+                    OnboardingIntroView(store: onboardingStore)
+                }
+
+            case .tabBar:
+                if let tabBarStore = store.scope(
+                    state: \.destination.tabBar,
+                    action: \.destination.tabBar
+                ) {
+                    TabBarView(store: tabBarStore)
                 }
             }
         }

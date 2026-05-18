@@ -26,9 +26,6 @@ struct SettingsView: View {
                 CreateAccountView(store: createAccountStore)
                     .presentationDetents([.medium])
             }
-            .onAppear {
-                store.send(.onAppear)
-            }
         }
         .alert(store: store.scope(state: \.$alert, action: \.alert))
         .background(Color(uiColor: .systemBackground))

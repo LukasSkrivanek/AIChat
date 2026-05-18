@@ -13,20 +13,23 @@ struct AppReducer {
 
     @Reducer(state: .equatable)
     enum Destination {
+        case launching
         case onboarding(OnboardingReducer)
         case tabBar(TabBarReducer)
         case welcome(WelcomeReducer)
     }
 
-    @Dependency(\.userManager) var userManager
-    @Dependency(\.authManager) var authManager
-    @Dependency(\.onboardingStatus) var onboardingStatus
+    @Dependency(\.userManager)
+    var userManager
+    @Dependency(\.authManager)
+    var authManager
+    @Dependency(\.onboardingStatus)
+    var onboardingStatus
 
     @ObservableState
     struct State: Equatable {
         var authError: String?
-        var isLoading = false
-        var destination: Destination.State = .welcome(WelcomeReducer.State())
+        var destination: Destination.State = .launching
     }
 
     enum Action {
@@ -43,7 +46,7 @@ struct AppReducer {
         Reduce { state, action in
             switch action {
             case .onAppear:
-                state.isLoading = true
+                state.destination = .launching
                 return .run { send in
                     do {
                         try await checkUserStatus()
@@ -54,7 +57,6 @@ struct AppReducer {
                 }
 
             case .userStatusCheckSucceeded:
-                state.isLoading = false
                 state.authError = nil
                 state.destination = onboardingStatus.hasCompletedOnboarding()
                     ? .tabBar(TabBarReducer.State())
@@ -62,7 +64,6 @@ struct AppReducer {
                 return .none
 
             case .userStatusCheckFailed(let errorMessage):
-                state.isLoading = false
                 state.authError = errorMessage
                 state.destination = .welcome(WelcomeReducer.State())
                 return .run { send in
@@ -88,8 +89,8 @@ struct AppReducer {
                     await onboardingStatus.setHasCompletedOnboarding(true)
                 }
 
-            case .destination(.tabBar(.profile(.settings(.presented(.delegate(.didSignOut)))))),
-                .destination(.tabBar(.profile(.settings(.presented(.delegate(.didDeleteAccount)))))):
+            case .destination(.tabBar(.profile(.delegate(.didSignOut)))),
+                .destination(.tabBar(.profile(.delegate(.didDeleteAccount)))):
                 state.destination = .welcome(WelcomeReducer.State())
                 return .none
 

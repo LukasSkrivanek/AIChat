@@ -12,6 +12,7 @@ import Foundation
 struct SettingsReducer {
 
     @Dependency(\.authManager) var authManager
+    @Dependency(\.userManager) var userManager
 
     @ObservableState
     struct State: Equatable {
@@ -22,11 +23,21 @@ struct SettingsReducer {
         var createAccount: CreateAccountReducer.State?
         @Presents
         var alert: AlertState<Action.Alert>?
+
+        init(
+            isPremium: Bool = true,
+            isAnonymousUser: Bool = false,
+            createAccount: CreateAccountReducer.State? = nil,
+            alert: AlertState<Action.Alert>? = nil
+        ) {
+            self.isPremium = isPremium
+            self.isAnonymousUser = isAnonymousUser
+            self.createAccount = createAccount
+            self.alert = alert
+        }
     }
 
     enum Action {
-        
-        case onAppear
         case createAccountButtonTapped
         case signOutButtonTapped
         case deleteAccountButtonTapped
@@ -52,17 +63,20 @@ struct SettingsReducer {
     var body: some Reducer<State, Action> {
         Reduce { state, action in
             switch action {
-            case .onAppear:
-                state.isAnonymousUser = authManager.auth?.isAnonymous == true
-                return .none
-
             case .createAccountButtonTapped:
                 state.createAccount = CreateAccountReducer.State()
                 return .none
 
             case .signOutButtonTapped:
                 return .run { send in
-                    await send(.signOutResult(Result { try authManager.signOut() }))
+                    await send(
+                        .signOutResult(
+                            Result {
+                                try authManager.signOut()
+                                userManager.signOut()
+                            }
+                        )
+                    )
                 }
 
             case .signOutResult(.success):
@@ -90,8 +104,16 @@ struct SettingsReducer {
                 return .none
 
             case .alert(.presented(.deleteAccountConfirmed)):
+                state.alert = nil
                 return .run { send in
-                    await send(.deleteAccountResult(Result { try await authManager.deleteAccount() }))
+                    await send(
+                        .deleteAccountResult(
+                            Result {
+                                try await userManager.deleteCurrentUser()
+                                try await authManager.deleteAccount()
+                            }
+                        )
+                    )
                 }
 
             case .deleteAccountResult(.success):

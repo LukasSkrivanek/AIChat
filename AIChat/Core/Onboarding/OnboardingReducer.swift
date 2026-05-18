@@ -54,7 +54,12 @@ struct OnboardingReducer {
         }
     }
 
-    @Dependency(\.continuousClock) var clock
+    @Dependency(\.continuousClock)
+    var clock
+    @Dependency(\.authManager)
+    var authManager
+    @Dependency(\.userManager)
+    var userManager
 
     @ObservableState
     struct State: Equatable {
@@ -82,6 +87,7 @@ struct OnboardingReducer {
         case delegate(Delegate)
         case finishButtonTapped
         case finishProfileSetupCompleted
+        case finishProfileSetupFailed
         case getStartedButtonTapped
         case profileColorTapped(ProfileColor)
 
@@ -102,15 +108,30 @@ struct OnboardingReducer {
                 return .none
 
             case .finishButtonTapped:
+                guard let selectedColor = state.selectedColor else {
+                    return .none
+                }
                 state.isCompletingProfileSetup = true
                 return .run { send in
-                    try await clock.sleep(for: .seconds(3))
-                    await send(.finishProfileSetupCompleted)
+                    do {
+                        let userId = try authManager.getAuthId()
+                        try await userManager.makeOnboardingCompleted(
+                            userId: userId,
+                            profileColorHex: selectedColor.color.asHex()
+                        )
+                        await send(.finishProfileSetupCompleted)
+                    } catch {
+                        await send(.finishProfileSetupFailed)
+                    }
                 }
 
             case .finishProfileSetupCompleted:
                 state.isCompletingProfileSetup = false
                 return .send(.delegate(.didFinish))
+
+            case .finishProfileSetupFailed:
+                state.isCompletingProfileSetup = false
+                return .none
 
             case .getStartedButtonTapped:
                 state.step = .colorSelection
