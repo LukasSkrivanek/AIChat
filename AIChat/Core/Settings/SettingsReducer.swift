@@ -132,8 +132,8 @@ struct SettingsReducer {
                         await send(
                             .deleteAccountResult(
                                 Result {
-                                    try await userManager.deleteCurrentUser()
                                     try await authManager.deleteAccount()
+                                    try await userManager.deleteCurrentUser()
                                 }
                             )
                         )
