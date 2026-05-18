@@ -110,9 +110,16 @@ struct ProfileView: View {
     }
 
     private var settingsButton: some View {
-        Image(systemName: "gear")
-            .font(.headline)
-            .foregroundStyle(.accent)
+        ZStack {
+            Color.clear
+            Image(systemName: "gear")
+                .font(.headline)
+                .foregroundStyle(.accent)
+        }
+        .frame(width: 44, height: 44)
+        .contentShape(Rectangle())
+        .clipped()
+        .background(Color.clear)
             .anyButton {
                 store.send(.settingsButtonTapped)
             }

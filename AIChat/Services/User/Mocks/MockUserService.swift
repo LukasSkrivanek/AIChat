@@ -17,6 +17,10 @@ struct MockUserService: RemoteUserService {
     func saveUser(user: UserModel) async throws {
     }
 
+    func fetchUser(userId: String) async throws -> UserModel? {
+        currentUser
+    }
+
     func makeOnboardingCompleted(userId: String, profileColorHex: String) async throws {
     }
 
