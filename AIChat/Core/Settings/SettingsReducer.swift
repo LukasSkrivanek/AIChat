@@ -6,72 +6,107 @@
 //
 
 import ComposableArchitecture
+import Foundation
 
 @Reducer
 struct SettingsReducer {
 
-    @Dependency(\.authManager) var authManager
+    nonisolated private enum CancelID: Hashable, Sendable {
+        case deleteAccount
+        case deleteAccountTimeout
+    }
+
+    @Dependency(\.continuousClock)
+    var clock
+    @Dependency(\.authManager)
+    var authManager
+    @Dependency(\.userManager)
+    var userManager
 
     @ObservableState
     struct State: Equatable {
-    
-        @Shared(.appStorage("showTabBar"))
-        var showTabBar = false
-        
+        var isDeletingAccount = false
         var isPremium: Bool = true
         var isAnonymousUser: Bool = false
-        var shouldDismiss: Bool = false
-        
+
         @Presents
         var createAccount: CreateAccountReducer.State?
         @Presents
         var alert: AlertState<Action.Alert>?
+
+        init(
+            isDeletingAccount: Bool = false,
+            isPremium: Bool = true,
+            isAnonymousUser: Bool = false,
+            createAccount: CreateAccountReducer.State? = nil,
+            alert: AlertState<Action.Alert>? = nil
+        ) {
+            self.isDeletingAccount = isDeletingAccount
+            self.isPremium = isPremium
+            self.isAnonymousUser = isAnonymousUser
+            self.createAccount = createAccount
+            self.alert = alert
+        }
     }
 
     enum Action {
-        
-        case onAppear
         case createAccountButtonTapped
         case signOutButtonTapped
         case deleteAccountButtonTapped
+        case deleteAccountTimedOut
         case signOutResult(Result<Void, any Error>)
         case deleteAccountResult(Result<Void, any Error>)
-        case didDismiss
-
+        case delegate(Delegate)
         case createAccount(PresentationAction<CreateAccountReducer.Action>)
-    
         case alert(PresentationAction<Alert>)
 
         @CasePathable
         enum Alert: Equatable {
             case deleteAccountConfirmed
+            case errorDismissed
+        }
+
+        @CasePathable
+        enum Delegate: Equatable {
+            case didDeleteAccount
+            case didSignOut
         }
     }
 
     var body: some Reducer<State, Action> {
         Reduce { state, action in
             switch action {
-            case .onAppear:
-                state.isAnonymousUser = authManager.auth?.isAnonymous == true
-                return .none
-
             case .createAccountButtonTapped:
                 state.createAccount = CreateAccountReducer.State()
                 return .none
 
             case .signOutButtonTapped:
                 return .run { send in
-                    await send(.signOutResult(Result { try authManager.signOut() }))
+                    await send(
+                        .signOutResult(
+                            Result {
+                                try authManager.signOut()
+                                userManager.signOut()
+                            }
+                        )
+                    )
                 }
 
             case .signOutResult(.success):
-                state.shouldDismiss = true
-                return .none
+                return .send(.delegate(.didSignOut))
 
             case .signOutResult(.failure(let error)):
-                state.alert = AlertState { TextState("Error") } message: {
-                    TextState(error.localizedDescription)
-                }
+                state.alert = AlertState(
+                    title: { TextState("Could not sign out") },
+                    actions: {
+                        ButtonState(action: .errorDismissed) {
+                            TextState("OK")
+                        }
+                    },
+                    message: {
+                        TextState(errorMessage(for: error))
+                    }
+                )
                 return .none
 
             case .deleteAccountButtonTapped:
@@ -90,37 +125,118 @@ struct SettingsReducer {
                 return .none
 
             case .alert(.presented(.deleteAccountConfirmed)):
-                return .run { send in
-                    await send(.deleteAccountResult(Result { try await authManager.deleteAccount() }))
-                }
+                state.alert = nil
+                state.isDeletingAccount = true
+                return .merge(
+                    .run { send in
+                        await send(
+                            .deleteAccountResult(
+                                Result {
+                                    try await authManager.deleteAccount()
+                                    try await userManager.deleteCurrentUser()
+                                }
+                            )
+                        )
+                    }
+                    .cancellable(id: CancelID.deleteAccount),
+
+                    .run { send in
+                        try await clock.sleep(for: .seconds(8))
+                        await send(.deleteAccountTimedOut)
+                    }
+                    .cancellable(id: CancelID.deleteAccountTimeout)
+                )
 
             case .deleteAccountResult(.success):
-                state.shouldDismiss = true
-                return .none
-
-            case .didDismiss:
-                state.$showTabBar.withLock { $0 = false }
-                return .none
+                state.isDeletingAccount = false
+                return .merge(
+                    .cancel(id: CancelID.deleteAccount),
+                    .cancel(id: CancelID.deleteAccountTimeout),
+                    .send(.delegate(.didDeleteAccount))
+                )
 
             case .deleteAccountResult(.failure(let error)):
-                state.alert = AlertState { TextState("Error") } message: {
-                    TextState(error.localizedDescription)
-                }
+                state.isDeletingAccount = false
+                state.alert = AlertState(
+                    title: { TextState("Could not delete account") },
+                    actions: {
+                        ButtonState(action: .errorDismissed) {
+                            TextState("OK")
+                        }
+                    },
+                    message: {
+                        TextState(errorMessage(for: error))
+                    }
+                )
+                return .merge(
+                    .cancel(id: CancelID.deleteAccount),
+                    .cancel(id: CancelID.deleteAccountTimeout)
+                )
+
+            case .deleteAccountTimedOut:
+                state.isDeletingAccount = false
+                state.alert = AlertState(
+                    title: { TextState("Could not delete account") },
+                    actions: {
+                        ButtonState(action: .errorDismissed) {
+                            TextState("OK")
+                        }
+                    },
+                    message: {
+                        TextState(errorMessage(for: SettingsError.deleteTimedOut))
+                    }
+                )
+                return .merge(
+                    .cancel(id: CancelID.deleteAccount),
+                    .cancel(id: CancelID.deleteAccountTimeout)
+                )
+
+            case .alert(.presented(.errorDismissed)):
+                state.alert = nil
                 return .none
 
             case .createAccount(.dismiss):
                 state.isAnonymousUser = authManager.auth?.isAnonymous == true
                 return .none
 
+            case .alert(.dismiss):
+                return .none
+
             case .createAccount:
                 return .none
 
-            case .alert:
+            case .alert, .delegate:
                 return .none
             }
         }
         .ifLet(\.$createAccount, action: \.createAccount) {
             CreateAccountReducer()
+        }
+    }
+}
+
+extension SettingsReducer {
+    private enum SettingsError: LocalizedError {
+        case deleteTimedOut
+
+        var errorDescription: String? {
+            switch self {
+            case .deleteTimedOut:
+                "You're offline or the request took too long. Please reconnect and try again."
+            }
+        }
+    }
+
+    private func errorMessage(for error: any Error) -> String {
+        switch error {
+        case let error as SettingsError:
+            error.errorDescription ?? "Something went wrong."
+        case let error as AuthServiceError:
+            error.errorDescription ?? "Something went wrong."
+        case let error as UserServiceError:
+            error.errorDescription ?? "Something went wrong."
+        default:
+            error.localizedDescription
         }
     }
 }

@@ -16,13 +16,24 @@ struct WelcomeReducer {
     }
 
     enum Action {
+        case delegate(Delegate)
+        case getStartedButtonTapped
         case signInButtonTapped
         case createAccount(PresentationAction<CreateAccountReducer.Action>)
+
+        @CasePathable
+        enum Delegate: Equatable {
+            case didSignIn(isNewUser: Bool)
+            case showOnboarding
+        }
     }
 
     var body: some Reducer<State, Action> {
         Reduce { state, action in
             switch action {
+            case .getStartedButtonTapped:
+                return .send(.delegate(.showOnboarding))
+
             case .signInButtonTapped:
                 state.createAccount = CreateAccountReducer.State(
                     title: "Sign in",
@@ -31,11 +42,9 @@ struct WelcomeReducer {
                 return .none
 
             case .createAccount(.presented(.delegate(.didSignIn(let isNewUser)))):
-                // TODO: handle sign in result (navigate to tabBar or onboarding)
-                _ = isNewUser
-                return .none
+                return .send(.delegate(.didSignIn(isNewUser: isNewUser)))
 
-            case .createAccount:
+            case .createAccount, .delegate:
                 return .none
             }
         }

@@ -6,129 +6,130 @@
 //
 
 import SwiftUI
+import ComposableArchitecture
 
 struct ProfileView: View {
-    @State private var showSettingsView: Bool = false
-    @State private var showSCreateAvatarView: Bool = false
-    @State private var currentUser: UserModel? = .mock
-    @State private var myAvatars: [AvatarModel] = []
-    @State private var isLoading: Bool = true
-    @State private var path: [NavigationPathOption] = []
+
+    @Bindable var store: StoreOf<ProfileReducer>
+
     var body: some View {
-        NavigationStack(path: $path) {
+        NavigationStack(
+            path: Binding(
+                get: { store.path },
+                set: { store.send(.pathChanged($0)) }
+            )
+        ) {
             List {
                 myInfoSection
                 myAvatarsSection
             }
             .navigationTitle("Profile")
-            .navigationDestinationForCoreModule(path: $path)
+            .navigationDestinationForCoreModule(
+                path: Binding(
+                    get: { store.path },
+                    set: { store.send(.pathChanged($0)) }
+                )
+            )
             .toolbar {
                 ToolbarItem(placement: .topBarTrailing) {
                     settingsButton
                 }
             }
-            .sheet(isPresented: $showSettingsView) {
-                SettingsView(store: .init(initialState: .init()) {
-                    SettingsReducer()
-                })
+            .sheet(item: $store.scope(state: \.settings, action: \.settings)) { settingsStore in
+                SettingsView(store: settingsStore)
             }
-            .fullScreenCover(isPresented: $showSCreateAvatarView) {
+            .fullScreenCover(
+                isPresented: Binding(
+                    get: { store.showCreateAvatar },
+                    set: { if !$0 { store.send(.createAvatarDismissed) } }
+                )
+            ) {
                 CreateAvatar()
             }
             .task {
-                await loadData()
+                store.send(.task)
             }
         }
-        
     }
-    private func loadData() async {
-        try? await Task.sleep(for: .seconds(4))
-        isLoading = false
-        myAvatars = AvatarModel.mocks
-    }
+
     private var myInfoSection: some View {
         Section {
             ZStack {
                 Circle()
-                    .fill(currentUser?.profileColorCalculated ?? .accent)
-                
+                    .fill(store.currentUser?.profileColorCalculated ?? .accent)
             }
             .frame(width: 100, height: 100)
             .frame(maxWidth: .infinity)
             .removeListRowFormatting()
         }
     }
-  
+
     private var myAvatarsSection: some View {
         Section {
-        if myAvatars.isEmpty {
-            Group {
-                if isLoading {
-                    ProgressView()
-                } else {
-                    Text("Click + to create an avatar")
-                        .padding(50)
-                        .frame(maxWidth: .infinity)
-                        .font(.body)
-                        .foregroundStyle(.secondary)
-                        .removeListRowFormatting()
+            if store.myAvatars.isEmpty {
+                Group {
+                    if store.isLoading {
+                        ProgressView()
+                    } else {
+                        Text("Click + to create an avatar")
+                            .padding(50)
+                            .frame(maxWidth: .infinity)
+                            .font(.body)
+                            .foregroundStyle(.secondary)
+                            .removeListRowFormatting()
+                    }
+                }
+            } else {
+                ForEach(store.myAvatars, id: \.self) { avatar in
+                    CustomListCellView(
+                        imageName: avatar.profileImageName,
+                        title: avatar.name,
+                        subtitle: nil
+                    )
+                    .anyButton(.highlight, action: {
+                        store.send(.avatarTapped(avatar))
+                    })
+                    .removeListRowFormatting()
+                }
+                .onDelete { indexSet in
+                    store.send(.deleteAvatar(indexSet))
                 }
             }
-           
-        } else {
-            ForEach(myAvatars, id: \.self) { avatar in
-                CustomListCellView(
-                    imageName: avatar.profileImageName,
-                    title: avatar.name,
-                    subtitle: nil
-                )
-                .anyButton(.highlight, action: {
-                    onAvatarPress(avatar: avatar)
-                })
-                .removeListRowFormatting()
-                
-            }
-            .onDelete { indexSet in
-                onDeleteAvatar(indexSet: indexSet)
+        } header: {
+            HStack(spacing: 0) {
+                Text("My Avatar")
+                Spacer()
+                Image(systemName: "plus.circle.fill")
+                    .font(.title)
+                    .foregroundStyle(.accent)
+                    .anyButton {
+                        store.send(.newAvatarButtonTapped)
+                    }
             }
         }
-            } header: {
-                HStack(spacing: 0) {
-                    Text("My Avatar")
-                    Spacer()
-                    Image(systemName: "plus.circle.fill")
-                        .font(.title)
-                        .foregroundStyle(.accent)
-                        .anyButton {
-                            onNewAvatarButtonPressed
-                        }
-                }
-            }
     }
+
     private var settingsButton: some View {
-        Image(systemName: "gear")
-            .font(.headline)
-            .foregroundStyle(.accent)
+        ZStack {
+            Color.clear
+            Image(systemName: "gear")
+                .font(.headline)
+                .foregroundStyle(.accent)
+        }
+        .frame(width: 44, height: 44)
+        .contentShape(Rectangle())
+        .clipped()
+        .background(Color.clear)
             .anyButton {
-                onSettingsButtonPressed()
+                store.send(.settingsButtonTapped)
             }
     }
-    private var onNewAvatarButtonPressed: () {
-        showSCreateAvatarView = true
-    }
-    private func onSettingsButtonPressed() {
-        showSettingsView = true
-    }
-    private func onDeleteAvatar(indexSet: IndexSet) {
-        guard let index = indexSet.first else { return }
-        myAvatars.remove(at: index)
-    }
-    private func onAvatarPress(avatar: AvatarModel) {
-        path.append(.chat(avatarId: avatar.avatarId))
-    }
-    
 }
 
 #Preview {
-    ProfileView()
+    ProfileView(
+        store: Store(initialState: ProfileReducer.State()) {
+            ProfileReducer()
+        }
+    )
 }

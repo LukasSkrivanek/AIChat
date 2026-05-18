@@ -10,7 +10,6 @@ import ComposableArchitecture
 struct SettingsView: View {
 
     @Bindable var store: StoreOf<SettingsReducer>
-    @Environment(\.dismiss) private var dismiss
 
     var body: some View {
         NavigationStack {
@@ -27,18 +26,20 @@ struct SettingsView: View {
                 CreateAccountView(store: createAccountStore)
                     .presentationDetents([.medium])
             }
-            .onAppear {
-                store.send(.onAppear)
+        }
+        .alert(store: store.scope(state: \.$alert, action: \.alert))
+        .overlay {
+            if store.isDeletingAccount {
+                ZStack {
+                    Color.black.opacity(0.15)
+                        .ignoresSafeArea()
+                    ProgressView("Deleting account…")
+                        .padding(20)
+                        .background(.regularMaterial, in: RoundedRectangle(cornerRadius: 16))
+                }
             }
         }
-        .alert($store.scope(state: \.alert, action: \.alert))
         .background(Color(uiColor: .systemBackground))
-        .onChange(of: store.shouldDismiss) { _, shouldDismiss in
-            if shouldDismiss {
-                dismiss()
-                store.send(.didDismiss)
-            }
-        }
     }
     
     private var accountSection: some View {
@@ -69,6 +70,7 @@ struct SettingsView: View {
         } header: {
             Text("Account")
         }
+        .disabled(store.isDeletingAccount)
     }
     private var purchaseSection: some View {
         Section {
