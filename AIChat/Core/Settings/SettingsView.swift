@@ -10,7 +10,6 @@ import ComposableArchitecture
 struct SettingsView: View {
 
     @Bindable var store: StoreOf<SettingsReducer>
-    @Environment(\.dismiss) private var dismiss
 
     var body: some View {
         NavigationStack {
@@ -31,14 +30,8 @@ struct SettingsView: View {
                 store.send(.onAppear)
             }
         }
-        .alert($store.scope(state: \.alert, action: \.alert))
+        .alert(store: store.scope(state: \.$alert, action: \.alert))
         .background(Color(uiColor: .systemBackground))
-        .onChange(of: store.shouldDismiss) { _, shouldDismiss in
-            if shouldDismiss {
-                dismiss()
-                store.send(.didDismiss)
-            }
-        }
     }
     
     private var accountSection: some View {
