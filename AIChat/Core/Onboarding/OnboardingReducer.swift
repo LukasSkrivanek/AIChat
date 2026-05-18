@@ -114,9 +114,7 @@ struct OnboardingReducer {
                 state.isCompletingProfileSetup = true
                 return .run { send in
                     do {
-                        let userId = try authManager.getAuthId()
-                        try await userManager.makeOnboardingCompleted(
-                            userId: userId,
+                        try await userManager.makeOnboardingCompletedCurrentUser(
                             profileColorHex: selectedColor.color.asHex()
                         )
                         await send(.finishProfileSetupCompleted)

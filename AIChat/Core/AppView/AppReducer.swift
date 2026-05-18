@@ -89,10 +89,28 @@ struct AppReducer {
                     await onboardingStatus.setHasCompletedOnboarding(true)
                 }
 
-            case .destination(.tabBar(.profile(.delegate(.didSignOut)))),
-                .destination(.tabBar(.profile(.delegate(.didDeleteAccount)))):
-                state.destination = .welcome(WelcomeReducer.State())
-                return .none
+            case .destination(.tabBar(.profile(.delegate(.didSignOut)))):
+                state.destination = .launching
+                return .run { send in
+                    do {
+                        try await checkUserStatus()
+                        await send(.userStatusCheckSucceeded)
+                    } catch {
+                        await send(.userStatusCheckFailed(error.localizedDescription))
+                    }
+                }
+
+            case .destination(.tabBar(.profile(.delegate(.didDeleteAccount)))):
+                state.destination = .launching
+                return .run { send in
+                    await onboardingStatus.setHasCompletedOnboarding(false)
+                    do {
+                        try await checkUserStatus()
+                        await send(.userStatusCheckSucceeded)
+                    } catch {
+                        await send(.userStatusCheckFailed(error.localizedDescription))
+                    }
+                }
 
             case .destination:
                 return .none

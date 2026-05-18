@@ -9,7 +9,10 @@ import SwiftUI
 import ComposableArchitecture
 
 extension UserManager: DependencyKey {
-    static let liveValue = UserManager(service: FirebaseUserService())
+    static let liveValue = UserManager(
+        remoteService: FirebaseUserService(),
+        localService: FileManagerUserPersistence()
+    )
 }
 
 extension DependencyValues {
