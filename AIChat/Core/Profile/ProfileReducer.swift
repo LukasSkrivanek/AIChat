@@ -11,6 +11,11 @@ import Foundation
 @Reducer
 struct ProfileReducer {
 
+    @Dependency(\.authManager)
+    var authManager
+    @Dependency(\.userManager)
+    var userManager
+
     @ObservableState
     struct State: Equatable {
         var currentUser: UserModel? = .mock
@@ -29,8 +34,15 @@ struct ProfileReducer {
         case createAvatarDismissed
         case avatarTapped(AvatarModel)
         case deleteAvatar(IndexSet)
+        case delegate(Delegate)
         case pathChanged([NavigationPathOption])
         case settings(PresentationAction<SettingsReducer.Action>)
+
+        @CasePathable
+        enum Delegate: Equatable {
+            case didDeleteAccount
+            case didSignOut
+        }
     }
 
     var body: some Reducer<State, Action> {
@@ -44,12 +56,23 @@ struct ProfileReducer {
 
             case .loadDataResult(let avatars):
                 state.isLoading = false
+                state.currentUser = userManager.currentUser
                 state.myAvatars = avatars
                 return .none
 
             case .settingsButtonTapped:
-                state.settings = SettingsReducer.State()
+                state.settings = SettingsReducer.State(
+                    isAnonymousUser: authManager.auth?.isAnonymous == true
+                )
                 return .none
+
+            case .settings(.presented(.delegate(.didDeleteAccount))):
+                state.settings = nil
+                return .send(.delegate(.didDeleteAccount))
+
+            case .settings(.presented(.delegate(.didSignOut))):
+                state.settings = nil
+                return .send(.delegate(.didSignOut))
 
             case .newAvatarButtonTapped:
                 state.showCreateAvatar = true
@@ -72,7 +95,7 @@ struct ProfileReducer {
                 state.path = path
                 return .none
 
-            case .settings:
+            case .delegate, .settings:
                 return .none
             }
         }

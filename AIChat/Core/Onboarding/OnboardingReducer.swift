@@ -6,6 +6,7 @@
 //
 
 import ComposableArchitecture
+import Foundation
 import SwiftUI
 
 @Reducer
@@ -54,13 +55,17 @@ struct OnboardingReducer {
         }
     }
 
-    @Dependency(\.continuousClock) var clock
+    @Dependency(\.continuousClock)
+    var clock
+    @Dependency(\.userManager)
+    var userManager
 
     @ObservableState
     struct State: Equatable {
         var isCompletingProfileSetup = false
         var selectedColor: ProfileColor?
         var step: Step = .intro
+        @Presents var alert: AlertState<Action.Alert>?
 
         let profileColors: [ProfileColor]
 
@@ -68,12 +73,14 @@ struct OnboardingReducer {
             isCompletingProfileSetup: Bool = false,
             profileColors: [ProfileColor] = ProfileColor.allCases,
             selectedColor: ProfileColor? = nil,
-            step: Step = .intro
+            step: Step = .intro,
+            alert: AlertState<Action.Alert>? = nil
         ) {
             self.isCompletingProfileSetup = isCompletingProfileSetup
             self.profileColors = profileColors
             self.selectedColor = selectedColor
             self.step = step
+            self.alert = alert
         }
     }
 
@@ -82,8 +89,15 @@ struct OnboardingReducer {
         case delegate(Delegate)
         case finishButtonTapped
         case finishProfileSetupCompleted
+        case finishProfileSetupFailed(String)
         case getStartedButtonTapped
         case profileColorTapped(ProfileColor)
+        case alert(PresentationAction<Alert>)
+
+        @CasePathable
+        enum Alert: Equatable {
+            case dismiss
+        }
 
         @CasePathable
         enum Delegate: Equatable {
@@ -102,15 +116,39 @@ struct OnboardingReducer {
                 return .none
 
             case .finishButtonTapped:
+                guard let selectedColor = state.selectedColor else {
+                    return .none
+                }
                 state.isCompletingProfileSetup = true
                 return .run { send in
-                    try await clock.sleep(for: .seconds(3))
-                    await send(.finishProfileSetupCompleted)
+                    do {
+                        try await userManager.makeOnboardingCompletedCurrentUser(
+                            profileColorHex: selectedColor.color.asHex()
+                        )
+                        await send(.finishProfileSetupCompleted)
+                    } catch {
+                        await send(.finishProfileSetupFailed(errorMessage(for: error)))
+                    }
                 }
 
             case .finishProfileSetupCompleted:
                 state.isCompletingProfileSetup = false
                 return .send(.delegate(.didFinish))
+
+            case .finishProfileSetupFailed(let message):
+                state.isCompletingProfileSetup = false
+                state.alert = AlertState(
+                    title: { TextState("Could not complete setup") },
+                    actions: {
+                        ButtonState(action: .dismiss) {
+                            TextState("OK")
+                        }
+                    },
+                    message: {
+                        TextState(message)
+                    }
+                )
+                return .none
 
             case .getStartedButtonTapped:
                 state.step = .colorSelection
@@ -120,9 +158,30 @@ struct OnboardingReducer {
                 state.selectedColor = color
                 return .none
 
+            case .alert(.presented(.dismiss)):
+                state.alert = nil
+                return .none
+
+            case .alert(.dismiss):
+                return .none
+
             case .delegate:
                 return .none
             }
+        }
+        .ifLet(\.$alert, action: \.alert)
+    }
+}
+
+extension OnboardingReducer {
+    private func errorMessage(for error: any Error) -> String {
+        switch error {
+        case let error as AuthServiceError:
+            error.errorDescription ?? "Something went wrong."
+        case let error as UserServiceError:
+            error.errorDescription ?? "Something went wrong."
+        default:
+            error.localizedDescription
         }
     }
 }

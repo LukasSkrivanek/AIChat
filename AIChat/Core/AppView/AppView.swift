@@ -9,7 +9,10 @@ import SwiftUI
 import ComposableArchitecture
 
 extension UserManager: DependencyKey {
-    static let liveValue = UserManager(service: FirebaseUserService())
+    static let liveValue = UserManager(
+        remoteService: FirebaseUserService(),
+        localService: FileManagerUserPersistence()
+    )
 }
 
 extension DependencyValues {
@@ -20,7 +23,7 @@ extension DependencyValues {
 }
 
 extension AuthManager: DependencyKey {
-    static let liveValue = AuthManager(service: MockAuthService())
+    static let liveValue = AuthManager(service: FirebaseAuthService())
 }
 
 extension DependencyValues {
@@ -36,46 +39,38 @@ struct AppView: View {
 
     var body: some View {
         Group {
-            if store.isLoading {
+            switch store.destination {
+            case .launching:
                 ProgressView()
-            } else {
-                switch store.destination {
-                case .welcome:
-                    if let welcomeStore = store.scope(
-                        state: \.destination.welcome,
-                        action: \.destination.welcome
-                    ) {
-                        WelcomeView(store: welcomeStore)
-                    }
 
-                case .onboarding:
-                    if let onboardingStore = store.scope(
-                        state: \.destination.onboarding,
-                        action: \.destination.onboarding
-                    ) {
-                        OnboardingIntroView(store: onboardingStore)
-                    }
+            case .welcome:
+                if let welcomeStore = store.scope(
+                    state: \.destination.welcome,
+                    action: \.destination.welcome
+                ) {
+                    WelcomeView(store: welcomeStore)
+                }
 
-                case .tabBar:
-                    if let tabBarStore = store.scope(
-                        state: \.destination.tabBar,
-                        action: \.destination.tabBar
-                    ) {
-                        TabBarView(store: tabBarStore)
-                    }
+            case .onboarding:
+                if let onboardingStore = store.scope(
+                    state: \.destination.onboarding,
+                    action: \.destination.onboarding
+                ) {
+                    OnboardingIntroView(store: onboardingStore)
+                }
+
+            case .tabBar:
+                if let tabBarStore = store.scope(
+                    state: \.destination.tabBar,
+                    action: \.destination.tabBar
+                ) {
+                    TabBarView(store: tabBarStore)
                 }
             }
         }
         .onAppear {
             store.send(.onAppear)
         }
-        .overlay {
-            if let error = store.authError {
-                VStack {
-                    Text("Error: \(error)")
-                        .foregroundColor(.red)
-                }
-            }
-        }
+        .alert(store: store.scope(state: \.$alert, action: \.alert))
     }
 }
