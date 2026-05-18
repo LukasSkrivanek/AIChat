@@ -20,7 +20,7 @@ struct ProfileReducer {
         var showCreateAvatar: Bool = false
         @Presents var settings: SettingsReducer.State?
     }
-
+    
     enum Action {
         case task
         case loadDataResult([AvatarModel])
@@ -39,7 +39,6 @@ struct ProfileReducer {
             case .task:
                 state.isLoading = true
                 return .run { send in
-                    try? await Task.sleep(for: .seconds(4))
                     await send(.loadDataResult(AvatarModel.mocks))
                 }
 

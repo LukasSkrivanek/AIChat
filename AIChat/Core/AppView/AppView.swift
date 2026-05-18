@@ -35,28 +35,23 @@ struct AppView: View {
     @Bindable var store: StoreOf<AppReducer>
 
     var body: some View {
-        AppViewBuilder(
-            showTabBar: store.showTabBar,
-            tabbarView: {
-                TabBarView()
-            },
-            onboardingView: {
-                WelcomeView(store: store.scope(state: \.welcome, action: \.welcome))
+        WelcomeView(store: store.scope(state: \.welcome, action: \.welcome))
+            .fullScreenCover(item: $store.scope(state: \.tabBar, action: \.tabBar)) { tabBarStore in
+                TabBarView(store: tabBarStore)
             }
-        )
-        .onAppear {
-            store.send(.onAppear)
-        }
-        .onChange(of: store.showTabBar) { _, showTabBar in
-            store.send(.showTabBarChanged(showTabBar))
-        }
-        .overlay {
-            if let error = store.authError {
-                VStack {
-                    Text("Error: \(error)")
-                        .foregroundColor(.red)
+            .onAppear {
+                store.send(.onAppear)
+            }
+            .onChange(of: store.showTabBar) { _, showTabBar in
+                store.send(.showTabBarChanged(showTabBar))
+            }
+            .overlay {
+                if let error = store.authError {
+                    VStack {
+                        Text("Error: \(error)")
+                            .foregroundColor(.red)
+                    }
                 }
             }
-        }
     }
 }

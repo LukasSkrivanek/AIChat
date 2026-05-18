@@ -12,7 +12,6 @@ import Foundation
 struct SettingsReducer {
 
     @Dependency(\.authManager) var authManager
-    @Dependency(\.dismiss) var dismiss
 
     @ObservableState
     struct State: Equatable {
@@ -37,11 +36,8 @@ struct SettingsReducer {
         case deleteAccountButtonTapped
         case signOutResult(Result<Void, any Error>)
         case deleteAccountResult(Result<Void, any Error>)
-        case signOutCompleted
-        case deleteAccountCompleted
 
         case createAccount(PresentationAction<CreateAccountReducer.Action>)
-    
         case alert(PresentationAction<Alert>)
 
         @CasePathable
@@ -68,11 +64,6 @@ struct SettingsReducer {
 
             case .signOutResult(.success):
                 state.$showTabBar.withLock { $0 = false }
-                return .run { _ in
-                    await dismiss()
-                }
-
-            case .signOutCompleted:
                 return .none
 
             case .signOutResult(.failure(let error)):
@@ -103,11 +94,6 @@ struct SettingsReducer {
 
             case .deleteAccountResult(.success):
                 state.$showTabBar.withLock { $0 = false }
-                return .run { _ in
-                    await dismiss()
-                }
-
-            case .deleteAccountCompleted:
                 return .none
 
             case .deleteAccountResult(.failure(let error)):

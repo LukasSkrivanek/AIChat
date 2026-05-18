@@ -21,6 +21,7 @@ struct AppReducer {
         var isLoading = true
         var authError: String?
         var welcome = WelcomeReducer.State()
+        @Presents var tabBar: TabBarReducer.State?
     }
 
     enum Action {
@@ -29,27 +30,18 @@ struct AppReducer {
         case userStatusCheckSucceeded
         case userStatusCheckFailed(String)
         case welcome(WelcomeReducer.Action)
+        case tabBar(PresentationAction<TabBarReducer.Action>)
     }
 
     var body: some Reducer<State, Action> {
-        Scope(state: \.welcome, action: \.welcome) {
-            WelcomeReducer()
-        }
-        Reduce { state, action in
-            switch action {
-            case .onAppear:
-                state.isLoading = true
-                return .run { send in
-                    do {
-                        try await checkUserStatus()
-                        await send(.userStatusCheckSucceeded)
-                    } catch {
-                        await send(.userStatusCheckFailed(error.localizedDescription))
-                    }
-                }
-
-            case .showTabBarChanged(let showTabBar):
-                if !showTabBar {
+        CombineReducers {
+            Scope(state: \.welcome, action: \.welcome) {
+                WelcomeReducer()
+            }
+            Reduce { state, action in
+                switch action {
+                case .onAppear:
+                    state.isLoading = true
                     return .run { send in
                         do {
                             try await checkUserStatus()
@@ -58,25 +50,48 @@ struct AppReducer {
                             await send(.userStatusCheckFailed(error.localizedDescription))
                         }
                     }
+
+                case .showTabBarChanged(let showTabBar):
+                    if showTabBar {
+                        state.tabBar = TabBarReducer.State()
+                    } else {
+                        state.tabBar = nil
+                        return .run { send in
+                            do {
+                                try await checkUserStatus()
+                                await send(.userStatusCheckSucceeded)
+                            } catch {
+                                await send(.userStatusCheckFailed(error.localizedDescription))
+                            }
+                        }
+                    }
+                    return .none
+
+                case .userStatusCheckSucceeded:
+                    state.isLoading = false
+                    state.authError = nil
+                    if state.showTabBar {
+                        state.tabBar = TabBarReducer.State()
+                    } else {
+                        state.tabBar = nil
+                    }
+                    return .none
+
+                case .userStatusCheckFailed(let errorMessage):
+                    state.isLoading = false
+                    state.authError = errorMessage
+                    return .run { send in
+                        try await Task.sleep(nanoseconds: 5_000_000_000)
+                        await send(.onAppear)
+                    }
+
+                case .welcome, .tabBar:
+                    return .none
                 }
-                return .none
-
-            case .userStatusCheckSucceeded:
-                state.isLoading = false
-                state.authError = nil
-                return .none
-
-            case .userStatusCheckFailed(let errorMessage):
-                state.isLoading = false
-                state.authError = errorMessage
-                return .run { send in
-                    try await Task.sleep(nanoseconds: 5_000_000_000)
-                    await send(.onAppear)
-                }
-
-            case .welcome:
-                return .none
             }
+        }
+        .ifLet(\.$tabBar, action: \.tabBar) {
+            TabBarReducer()
         }
     }
 
