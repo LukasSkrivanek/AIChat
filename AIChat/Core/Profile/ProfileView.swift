@@ -13,38 +13,25 @@ struct ProfileView: View {
     @Bindable var store: StoreOf<ProfileReducer>
 
     var body: some View {
-        NavigationStack(
-            path: Binding(
-                get: { store.path },
-                set: { store.send(.pathChanged($0)) }
-            )
-        ) {
+        NavigationStack {
             List {
                 myInfoSection
                 myAvatarsSection
             }
             .navigationTitle("Profile")
-            .navigationDestinationForCoreModule(
-                path: Binding(
-                    get: { store.path },
-                    set: { store.send(.pathChanged($0)) }
-                )
-            )
             .toolbar {
                 ToolbarItem(placement: .topBarTrailing) {
                     settingsButton
                 }
             }
-            .sheet(item: $store.scope(state: \.settings, action: \.settings)) { settingsStore in
+            .sheet(item: $store.scope(state: \.destination?.settings, action: \.destination.settings)) { settingsStore in
                 SettingsView(store: settingsStore)
             }
-            .fullScreenCover(
-                isPresented: Binding(
-                    get: { store.showCreateAvatar },
-                    set: { if !$0 { store.send(.createAvatarDismissed) } }
-                )
-            ) {
+            .fullScreenCover(item: $store.scope(state: \.destination?.createAvatar, action: \.destination.createAvatar)) { _ in
                 CreateAvatar()
+            }
+            .navigationDestination(item: $store.scope(state: \.destination?.chat, action: \.destination.chat)) { chatStore in
+                ChatView(store: chatStore)
             }
             .task {
                 store.send(.task)

@@ -9,7 +9,28 @@ import ComposableArchitecture
 import Foundation
 
 @Reducer
+struct CreateAvatarReducer {
+    // TODO: Move CreateAvatar screen state and behavior into this reducer.
+    @ObservableState
+    struct State: Equatable {}
+
+    enum Action {}
+
+    var body: some Reducer<State, Action> {
+        Reduce { _, _ in
+            .none
+        }
+    }
+}
+
+@Reducer
 struct ProfileReducer {
+    @Reducer(state: .equatable)
+    enum Destination {
+        case chat(ChatReducer)
+        case createAvatar(CreateAvatarReducer)
+        case settings(SettingsReducer)
+    }
 
     @Dependency(\.authManager)
     var authManager
@@ -21,9 +42,7 @@ struct ProfileReducer {
         var currentUser: UserModel? = .mock
         var myAvatars: [AvatarModel] = []
         var isLoading: Bool = true
-        var path: [NavigationPathOption] = []
-        var showCreateAvatar: Bool = false
-        @Presents var settings: SettingsReducer.State?
+        @Presents var destination: Destination.State?
     }
     
     enum Action {
@@ -31,12 +50,10 @@ struct ProfileReducer {
         case loadDataResult([AvatarModel])
         case settingsButtonTapped
         case newAvatarButtonTapped
-        case createAvatarDismissed
         case avatarTapped(AvatarModel)
         case deleteAvatar(IndexSet)
         case delegate(Delegate)
-        case pathChanged([NavigationPathOption])
-        case settings(PresentationAction<SettingsReducer.Action>)
+        case destination(PresentationAction<Destination.Action>)
 
         @CasePathable
         enum Delegate: Equatable {
@@ -61,29 +78,39 @@ struct ProfileReducer {
                 return .none
 
             case .settingsButtonTapped:
-                state.settings = SettingsReducer.State(
+                state.destination = .settings(
+                    SettingsReducer.State(
                     isAnonymousUser: authManager.auth?.isAnonymous == true
+                    )
                 )
                 return .none
 
-            case .settings(.presented(.delegate(.didDeleteAccount))):
-                state.settings = nil
+            case .destination(.presented(.settings(.delegate(.didDeleteAccount)))):
+                state.destination = nil
                 return .send(.delegate(.didDeleteAccount))
 
-            case .settings(.presented(.delegate(.didSignOut))):
-                state.settings = nil
+            case .destination(.presented(.settings(.delegate(.didSignOut)))):
+                state.destination = nil
                 return .send(.delegate(.didSignOut))
 
             case .newAvatarButtonTapped:
-                state.showCreateAvatar = true
-                return .none
-
-            case .createAvatarDismissed:
-                state.showCreateAvatar = false
+                state.destination = .createAvatar(CreateAvatarReducer.State())
                 return .none
 
             case .avatarTapped(let avatar):
-                state.path.append(.chat(avatarId: avatar.avatarId))
+                state.destination = .chat(
+                    ChatReducer.State(
+                        chatMessages: [],
+                        textFieldText: "",
+                        scrollPosition: nil,
+                        showProfileModal: false,
+                        currentUser: state.currentUser,
+                        avatar: avatar,
+                        avatarId: avatar.avatarId,
+                        alert: nil,
+                        confirmationDialog: nil
+                    )
+                )
                 return .none
 
             case .deleteAvatar(let indexSet):
@@ -91,16 +118,12 @@ struct ProfileReducer {
                 state.myAvatars.remove(at: index)
                 return .none
 
-            case .pathChanged(let path):
-                state.path = path
-                return .none
-
-            case .delegate, .settings:
+            case .delegate, .destination:
                 return .none
             }
         }
-        .ifLet(\.$settings, action: \.settings) {
-            SettingsReducer()
+        .ifLet(\.$destination, action: \.destination) {
+            Destination.body
         }
     }
 }
