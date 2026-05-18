@@ -68,9 +68,12 @@ struct OnboardingColorView: View {
 }
 
 #Preview {
-    OnboardingColorView(
-        store: Store(initialState: OnboardingReducer.State(selectedColor: .mint)) {
-            OnboardingReducer()
-        }
-    )
+    NavigationStack {
+        OnboardingColorView(
+            store: OnboardingFlowPreview.store(
+                selectedColor: .mint,
+                step: .colorSelection
+            )
+        )
+    }
 }

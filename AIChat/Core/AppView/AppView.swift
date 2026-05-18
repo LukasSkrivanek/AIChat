@@ -9,7 +9,10 @@ import SwiftUI
 import ComposableArchitecture
 
 extension UserManager: DependencyKey {
-    static let liveValue = UserManager(service: FirebaseUserService())
+    static let liveValue = UserManager(
+        remoteService: FirebaseUserService(),
+        localService: FileManagerUserPersistence()
+    )
 }
 
 extension DependencyValues {
@@ -20,7 +23,7 @@ extension DependencyValues {
 }
 
 extension AuthManager: DependencyKey {
-    static let liveValue = AuthManager(service: MockAuthService())
+    static let liveValue = AuthManager(service: FirebaseAuthService())
 }
 
 extension DependencyValues {
@@ -37,7 +40,7 @@ struct AppView: View {
     var body: some View {
         Group {
             switch store.destination {
-            case .loading:
+            case .launching:
                 ProgressView()
 
             case .welcome:
@@ -68,13 +71,6 @@ struct AppView: View {
         .onAppear {
             store.send(.onAppear)
         }
-        .overlay {
-            if let error = store.authError {
-                VStack {
-                    Text("Error: \(error)")
-                        .foregroundColor(.red)
-                }
-            }
-        }
+        .alert(store: store.scope(state: \.$alert, action: \.alert))
     }
 }

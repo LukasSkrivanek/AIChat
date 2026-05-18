@@ -26,11 +26,19 @@ struct SettingsView: View {
                 CreateAccountView(store: createAccountStore)
                     .presentationDetents([.medium])
             }
-            .onAppear {
-                store.send(.onAppear)
-            }
         }
         .alert(store: store.scope(state: \.$alert, action: \.alert))
+        .overlay {
+            if store.isDeletingAccount {
+                ZStack {
+                    Color.black.opacity(0.15)
+                        .ignoresSafeArea()
+                    ProgressView("Deleting account…")
+                        .padding(20)
+                        .background(.regularMaterial, in: RoundedRectangle(cornerRadius: 16))
+                }
+            }
+        }
         .background(Color(uiColor: .systemBackground))
     }
     
@@ -62,6 +70,7 @@ struct SettingsView: View {
         } header: {
             Text("Account")
         }
+        .disabled(store.isDeletingAccount)
     }
     private var purchaseSection: some View {
         Section {

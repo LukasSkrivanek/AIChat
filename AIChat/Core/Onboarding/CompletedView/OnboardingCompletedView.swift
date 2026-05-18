@@ -39,9 +39,10 @@ struct OnboardingCompletedView: View {
 #Preview {
     NavigationStack {
         OnboardingCompletedView(
-            store: Store(initialState: OnboardingReducer.State(selectedColor: .mint)) {
-                OnboardingReducer()
-            }
+            store: OnboardingFlowPreview.store(
+                selectedColor: .mint,
+                step: .completed
+            )
         )
     }
 }

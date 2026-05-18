@@ -6,14 +6,16 @@
 //
 
 import ComposableArchitecture
+import Foundation
 import SwiftUI
 
 @Reducer
 struct OnboardingReducer {
 
-    enum Path: Hashable {
+    enum Step: Equatable {
         case colorSelection
         case completed
+        case intro
     }
 
     enum ProfileColor: String, CaseIterable, Equatable, Hashable, Identifiable {
@@ -53,26 +55,32 @@ struct OnboardingReducer {
         }
     }
 
-    @Dependency(\.continuousClock) var clock
+    @Dependency(\.continuousClock)
+    var clock
+    @Dependency(\.userManager)
+    var userManager
 
     @ObservableState
     struct State: Equatable {
         var isCompletingProfileSetup = false
-        var path: [Path] = []
         var selectedColor: ProfileColor?
+        var step: Step = .intro
+        @Presents var alert: AlertState<Action.Alert>?
 
         let profileColors: [ProfileColor]
 
         init(
             isCompletingProfileSetup: Bool = false,
-            path: [Path] = [],
             profileColors: [ProfileColor] = ProfileColor.allCases,
-            selectedColor: ProfileColor? = nil
+            selectedColor: ProfileColor? = nil,
+            step: Step = .intro,
+            alert: AlertState<Action.Alert>? = nil
         ) {
             self.isCompletingProfileSetup = isCompletingProfileSetup
-            self.path = path
             self.profileColors = profileColors
             self.selectedColor = selectedColor
+            self.step = step
+            self.alert = alert
         }
     }
 
@@ -81,9 +89,15 @@ struct OnboardingReducer {
         case delegate(Delegate)
         case finishButtonTapped
         case finishProfileSetupCompleted
+        case finishProfileSetupFailed(String)
         case getStartedButtonTapped
-        case pathChanged([Path])
         case profileColorTapped(ProfileColor)
+        case alert(PresentationAction<Alert>)
+
+        @CasePathable
+        enum Alert: Equatable {
+            case dismiss
+        }
 
         @CasePathable
         enum Delegate: Equatable {
@@ -98,35 +112,76 @@ struct OnboardingReducer {
                 guard state.selectedColor != nil else {
                     return .none
                 }
-                state.path.append(.completed)
+                state.step = .completed
                 return .none
 
             case .finishButtonTapped:
+                guard let selectedColor = state.selectedColor else {
+                    return .none
+                }
                 state.isCompletingProfileSetup = true
                 return .run { send in
-                    try await clock.sleep(for: .seconds(3))
-                    await send(.finishProfileSetupCompleted)
+                    do {
+                        try await userManager.makeOnboardingCompletedCurrentUser(
+                            profileColorHex: selectedColor.color.asHex()
+                        )
+                        await send(.finishProfileSetupCompleted)
+                    } catch {
+                        await send(.finishProfileSetupFailed(errorMessage(for: error)))
+                    }
                 }
 
             case .finishProfileSetupCompleted:
                 state.isCompletingProfileSetup = false
                 return .send(.delegate(.didFinish))
 
-            case .getStartedButtonTapped:
-                state.path = [.colorSelection]
+            case .finishProfileSetupFailed(let message):
+                state.isCompletingProfileSetup = false
+                state.alert = AlertState(
+                    title: { TextState("Could not complete setup") },
+                    actions: {
+                        ButtonState(action: .dismiss) {
+                            TextState("OK")
+                        }
+                    },
+                    message: {
+                        TextState(message)
+                    }
+                )
                 return .none
 
-            case .pathChanged(let path):
-                state.path = path
+            case .getStartedButtonTapped:
+                state.step = .colorSelection
                 return .none
 
             case .profileColorTapped(let color):
                 state.selectedColor = color
                 return .none
 
+            case .alert(.presented(.dismiss)):
+                state.alert = nil
+                return .none
+
+            case .alert(.dismiss):
+                return .none
+
             case .delegate:
                 return .none
             }
+        }
+        .ifLet(\.$alert, action: \.alert)
+    }
+}
+
+extension OnboardingReducer {
+    private func errorMessage(for error: any Error) -> String {
+        switch error {
+        case let error as AuthServiceError:
+            error.errorDescription ?? "Something went wrong."
+        case let error as UserServiceError:
+            error.errorDescription ?? "Something went wrong."
+        default:
+            error.localizedDescription
         }
     }
 }

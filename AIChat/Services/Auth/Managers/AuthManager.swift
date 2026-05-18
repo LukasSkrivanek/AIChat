@@ -58,5 +58,7 @@ final class AuthManager {
     }
 
     func deleteAccount() async throws {
+        try await service.deleteAccount()
+        auth = nil
     }
 }

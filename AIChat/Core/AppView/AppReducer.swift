@@ -11,36 +11,23 @@ import ComposableArchitecture
 @Reducer
 struct AppReducer {
 
-    @Reducer
-    struct Loading {
-        @ObservableState
-        struct State: Equatable {}
-
-        enum Action {}
-
-        var body: some Reducer<State, Action> {
-            Reduce { _, _ in
-                .none
-            }
-        }
-    }
-
     @Reducer(state: .equatable)
     enum Destination {
-        case loading(Loading)
+        case launching
         case onboarding(OnboardingReducer)
         case tabBar(TabBarReducer)
         case welcome(WelcomeReducer)
     }
 
-    @Dependency(\.userManager) var userManager
-    @Dependency(\.authManager) var authManager
-    @Dependency(\.onboardingStatus) var onboardingStatus
+    @Dependency(\.userManager)
+    var userManager
+    @Dependency(\.authManager)
+    var authManager
 
     @ObservableState
     struct State: Equatable {
-        var authError: String?
-        var destination: Destination.State = .welcome(WelcomeReducer.State())
+        var destination: Destination.State = .launching
+        @Presents var alert: AlertState<Action.Alert>?
     }
 
     enum Action {
@@ -48,6 +35,13 @@ struct AppReducer {
         case onAppear
         case userStatusCheckSucceeded
         case userStatusCheckFailed(String)
+        case alert(PresentationAction<Alert>)
+
+        @CasePathable
+        enum Alert: Equatable {
+            case retryTapped
+            case dismissTapped
+        }
     }
 
     var body: some Reducer<State, Action> {
@@ -57,37 +51,66 @@ struct AppReducer {
         Reduce { state, action in
             switch action {
             case .onAppear:
-                state.destination = .loading(Loading.State())
+                state.destination = .launching
                 return .run { send in
                     do {
                         try await checkUserStatus()
                         await send(.userStatusCheckSucceeded)
                     } catch {
-                        await send(.userStatusCheckFailed(error.localizedDescription))
+                        await send(.userStatusCheckFailed(errorMessage(for: error)))
                     }
                 }
 
             case .userStatusCheckSucceeded:
-                state.authError = nil
-                state.destination = onboardingStatus.hasCompletedOnboarding()
+                state.alert = nil
+                state.destination = hasCompletedOnboarding()
                     ? .tabBar(TabBarReducer.State())
                     : .welcome(WelcomeReducer.State())
                 return .none
 
             case .userStatusCheckFailed(let errorMessage):
-                state.authError = errorMessage
                 state.destination = .welcome(WelcomeReducer.State())
+                state.alert = AlertState(
+                    title: { TextState("Could not start app") },
+                    actions: {
+                        ButtonState(role: .cancel, action: .dismissTapped) {
+                            TextState("OK")
+                        }
+                        ButtonState(action: .retryTapped) {
+                            TextState("Try again")
+                        }
+                    },
+                    message: {
+                        TextState(errorMessage)
+                    }
+                )
+                return .none
+
+            case .alert(.presented(.retryTapped)):
+                state.alert = nil
+                state.destination = .launching
                 return .run { send in
-                    try await Task.sleep(nanoseconds: 5_000_000_000)
-                    await send(.onAppear)
+                    do {
+                        try await checkUserStatus()
+                        await send(.userStatusCheckSucceeded)
+                    } catch {
+                        await send(.userStatusCheckFailed(errorMessage(for: error)))
+                    }
                 }
+
+            case .alert(.presented(.dismissTapped)):
+                state.alert = nil
+                return .none
+
+            case .alert(.dismiss):
+                return .none
 
             case .destination(.welcome(.delegate(.showOnboarding))):
                 state.destination = .onboarding(OnboardingReducer.State())
                 return .none
 
             case .destination(.welcome(.delegate(.didSignIn(let isNewUser)))):
-                if isNewUser || !onboardingStatus.hasCompletedOnboarding() {
+                if isNewUser || !hasCompletedOnboarding() {
                     state.destination = .onboarding(OnboardingReducer.State())
                 } else {
                     state.destination = .tabBar(TabBarReducer.State())
@@ -96,19 +119,35 @@ struct AppReducer {
 
             case .destination(.onboarding(.delegate(.didFinish))):
                 state.destination = .tabBar(TabBarReducer.State())
-                return .run { _ in
-                    await onboardingStatus.setHasCompletedOnboarding(true)
+                return .none
+
+            case .destination(.tabBar(.profile(.delegate(.didSignOut)))):
+                state.destination = .launching
+                return .run { send in
+                    do {
+                        try await checkUserStatus()
+                        await send(.userStatusCheckSucceeded)
+                    } catch {
+                        await send(.userStatusCheckFailed(errorMessage(for: error)))
+                    }
                 }
 
-            case .destination(.tabBar(.profile(.settings(.presented(.delegate(.didSignOut)))))),
-                .destination(.tabBar(.profile(.settings(.presented(.delegate(.didDeleteAccount)))))):
-                state.destination = .welcome(WelcomeReducer.State())
-                return .none
+            case .destination(.tabBar(.profile(.delegate(.didDeleteAccount)))):
+                state.destination = .launching
+                return .run { send in
+                    do {
+                        try await checkUserStatus()
+                        await send(.userStatusCheckSucceeded)
+                    } catch {
+                        await send(.userStatusCheckFailed(errorMessage(for: error)))
+                    }
+                }
 
             case .destination:
                 return .none
             }
         }
+        .ifLet(\.$alert, action: \.alert)
     }
 
     // MARK: - Private Methods
@@ -120,6 +159,23 @@ struct AppReducer {
             let result = try await authManager.signInAnonymously()
             print("Sign in anonymously: \(result.user.uId)")
             try await userManager.logIn(auth: result.user, isNewUser: result.isNewUser)
+        }
+    }
+
+    private func hasCompletedOnboarding() -> Bool {
+        userManager.currentUser?.didCompleteOnboarding == true
+    }
+}
+
+extension AppReducer {
+    private func errorMessage(for error: any Error) -> String {
+        switch error {
+        case let error as AuthServiceError:
+            error.errorDescription ?? "Something went wrong."
+        case let error as UserServiceError:
+            error.errorDescription ?? "Something went wrong."
+        default:
+            error.localizedDescription
         }
     }
 }
