@@ -6,6 +6,7 @@
 //
 
 import ComposableArchitecture
+import Foundation
 import SwiftUI
 
 @Reducer
@@ -56,8 +57,6 @@ struct OnboardingReducer {
 
     @Dependency(\.continuousClock)
     var clock
-    @Dependency(\.authManager)
-    var authManager
     @Dependency(\.userManager)
     var userManager
 
@@ -66,6 +65,7 @@ struct OnboardingReducer {
         var isCompletingProfileSetup = false
         var selectedColor: ProfileColor?
         var step: Step = .intro
+        @Presents var alert: AlertState<Action.Alert>?
 
         let profileColors: [ProfileColor]
 
@@ -73,12 +73,14 @@ struct OnboardingReducer {
             isCompletingProfileSetup: Bool = false,
             profileColors: [ProfileColor] = ProfileColor.allCases,
             selectedColor: ProfileColor? = nil,
-            step: Step = .intro
+            step: Step = .intro,
+            alert: AlertState<Action.Alert>? = nil
         ) {
             self.isCompletingProfileSetup = isCompletingProfileSetup
             self.profileColors = profileColors
             self.selectedColor = selectedColor
             self.step = step
+            self.alert = alert
         }
     }
 
@@ -87,9 +89,15 @@ struct OnboardingReducer {
         case delegate(Delegate)
         case finishButtonTapped
         case finishProfileSetupCompleted
-        case finishProfileSetupFailed
+        case finishProfileSetupFailed(String)
         case getStartedButtonTapped
         case profileColorTapped(ProfileColor)
+        case alert(PresentationAction<Alert>)
+
+        @CasePathable
+        enum Alert: Equatable {
+            case dismiss
+        }
 
         @CasePathable
         enum Delegate: Equatable {
@@ -119,7 +127,7 @@ struct OnboardingReducer {
                         )
                         await send(.finishProfileSetupCompleted)
                     } catch {
-                        await send(.finishProfileSetupFailed)
+                        await send(.finishProfileSetupFailed(error.localizedDescription))
                     }
                 }
 
@@ -127,8 +135,19 @@ struct OnboardingReducer {
                 state.isCompletingProfileSetup = false
                 return .send(.delegate(.didFinish))
 
-            case .finishProfileSetupFailed:
+            case .finishProfileSetupFailed(let message):
                 state.isCompletingProfileSetup = false
+                state.alert = AlertState(
+                    title: { TextState("Could not complete setup") },
+                    actions: {
+                        ButtonState(action: .dismiss) {
+                            TextState("OK")
+                        }
+                    },
+                    message: {
+                        TextState(message)
+                    }
+                )
                 return .none
 
             case .getStartedButtonTapped:
@@ -139,9 +158,17 @@ struct OnboardingReducer {
                 state.selectedColor = color
                 return .none
 
+            case .alert(.presented(.dismiss)):
+                state.alert = nil
+                return .none
+
+            case .alert(.dismiss):
+                return .none
+
             case .delegate:
                 return .none
             }
         }
+        .ifLet(\.$alert, action: \.alert)
     }
 }

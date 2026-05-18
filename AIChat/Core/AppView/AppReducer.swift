@@ -23,8 +23,6 @@ struct AppReducer {
     var userManager
     @Dependency(\.authManager)
     var authManager
-    @Dependency(\.onboardingStatus)
-    var onboardingStatus
 
     @ObservableState
     struct State: Equatable {
@@ -58,7 +56,7 @@ struct AppReducer {
 
             case .userStatusCheckSucceeded:
                 state.authError = nil
-                state.destination = onboardingStatus.hasCompletedOnboarding()
+                state.destination = hasCompletedOnboarding()
                     ? .tabBar(TabBarReducer.State())
                     : .welcome(WelcomeReducer.State())
                 return .none
@@ -67,7 +65,6 @@ struct AppReducer {
                 state.authError = errorMessage
                 state.destination = .welcome(WelcomeReducer.State())
                 return .run { send in
-                    try await Task.sleep(nanoseconds: 5_000_000_000)
                     await send(.onAppear)
                 }
 
@@ -76,7 +73,7 @@ struct AppReducer {
                 return .none
 
             case .destination(.welcome(.delegate(.didSignIn(let isNewUser)))):
-                if isNewUser || !onboardingStatus.hasCompletedOnboarding() {
+                if isNewUser || !hasCompletedOnboarding() {
                     state.destination = .onboarding(OnboardingReducer.State())
                 } else {
                     state.destination = .tabBar(TabBarReducer.State())
@@ -85,9 +82,7 @@ struct AppReducer {
 
             case .destination(.onboarding(.delegate(.didFinish))):
                 state.destination = .tabBar(TabBarReducer.State())
-                return .run { _ in
-                    await onboardingStatus.setHasCompletedOnboarding(true)
-                }
+                return .none
 
             case .destination(.tabBar(.profile(.delegate(.didSignOut)))):
                 state.destination = .launching
@@ -103,7 +98,6 @@ struct AppReducer {
             case .destination(.tabBar(.profile(.delegate(.didDeleteAccount)))):
                 state.destination = .launching
                 return .run { send in
-                    await onboardingStatus.setHasCompletedOnboarding(false)
                     do {
                         try await checkUserStatus()
                         await send(.userStatusCheckSucceeded)
@@ -128,5 +122,9 @@ struct AppReducer {
             print("Sign in anonymously: \(result.user.uId)")
             try await userManager.logIn(auth: result.user, isNewUser: result.isNewUser)
         }
+    }
+
+    private func hasCompletedOnboarding() -> Bool {
+        userManager.currentUser?.didCompleteOnboarding == true
     }
 }

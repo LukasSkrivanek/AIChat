@@ -30,7 +30,8 @@ final class UserManager: ObservableObject {
         let creationVersion = isNewUser ? "1.0" : ""
         let user = UserModel(auth: auth, creationVersion: creationVersion)
         try await remoteService.saveUser(user: user)
-        currentUser = user
+        currentUser = try await remoteService.fetchUser(userId: auth.uId) ?? user
+        saveCurrentUserLocally()
         addCurrentUserListener(userId: auth.uId)
     }
     
@@ -50,6 +51,19 @@ final class UserManager: ObservableObject {
     func makeOnboardingCompletedCurrentUser(profileColorHex: String ) async throws {
         let uid = try currentUserId()
         try await remoteService.makeOnboardingCompleted(userId: uid, profileColorHex: profileColorHex)
+        if let currentUser {
+            self.currentUser = UserModel(
+                userId: currentUser.userId,
+                email: currentUser.email,
+                isAnonymous: currentUser.isAnonymous,
+                creationDate: currentUser.creationDate,
+                lastSignInDate: currentUser.lastSignInDate,
+                didCompleteOnboarding: true,
+                creationVersion: currentUser.creationVersion,
+                profileColorHex: profileColorHex
+            )
+            saveCurrentUserLocally()
+        }
     }
 
     func makeOnboardingCompleted(userId: String, profileColorHex: String) async throws {

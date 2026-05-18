@@ -9,6 +9,7 @@ import Foundation
 
 protocol RemoteUserService: Sendable {
     func saveUser(user: UserModel) async throws
+    func fetchUser(userId: String) async throws -> UserModel?
     func makeOnboardingCompleted(userId: String, profileColorHex: String) async throws
     func deleteUser(userId: String) async throws
     func streamUser(userId: String) -> AsyncThrowingStream<UserModel, Error>

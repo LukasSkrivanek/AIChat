@@ -26,6 +26,14 @@ struct FirebaseUserService: RemoteUserService {
         collection.streamDocument(id: userId)
     }
 
+    func fetchUser(userId: String) async throws -> UserModel? {
+        let snapshot = try await collection.document(userId).getDocument()
+        guard snapshot.exists else {
+            return nil
+        }
+        return try snapshot.data(as: UserModel.self)
+    }
+
     func makeOnboardingCompleted(userId: String, profileColorHex: String) async throws {
         print("ONBOARDING UPDATE START:", userId)
         try await collection.document(userId).updateData([

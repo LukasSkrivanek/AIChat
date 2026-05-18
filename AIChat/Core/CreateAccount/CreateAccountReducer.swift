@@ -11,6 +11,7 @@ import ComposableArchitecture
 struct CreateAccountReducer {
 
     @Dependency(\.authManager) var authManager
+    @Dependency(\.userManager) var userManager
     @Dependency(\.dismiss) var dismiss
 
     @ObservableState
@@ -40,6 +41,7 @@ struct CreateAccountReducer {
                 return .run { send in
                     do {
                         let result = try await authManager.signInApple()
+                        try await userManager.logIn(auth: result.user, isNewUser: result.isNewUser)
                         await send(.signInAppleSucceeded(isNewUser: result.isNewUser))
                     } catch {
                         await send(.signInAppleFailed(error.localizedDescription))
