@@ -127,7 +127,7 @@ struct OnboardingReducer {
                         )
                         await send(.finishProfileSetupCompleted)
                     } catch {
-                        await send(.finishProfileSetupFailed(error.localizedDescription))
+                        await send(.finishProfileSetupFailed(errorMessage(for: error)))
                     }
                 }
 
@@ -170,5 +170,18 @@ struct OnboardingReducer {
             }
         }
         .ifLet(\.$alert, action: \.alert)
+    }
+}
+
+extension OnboardingReducer {
+    private func errorMessage(for error: any Error) -> String {
+        switch error {
+        case let error as AuthServiceError:
+            error.errorDescription ?? "Something went wrong."
+        case let error as UserServiceError:
+            error.errorDescription ?? "Something went wrong."
+        default:
+            error.localizedDescription
+        }
     }
 }

@@ -33,65 +33,85 @@ struct FirebaseAuthService: AuthService {
     }
     
     func signInAnonymously() async throws -> (user: UserAuthInfo, isNewUser: Bool) {
-        let result = try await Auth.auth().signInAnonymously()
-        return result.asAuthInfo
+        do {
+            let result = try await Auth.auth().signInAnonymously()
+            return result.asAuthInfo
+        } catch {
+            throw mapError(error)
+        }
     }
     
     func signInApple() async throws -> (user: UserAuthInfo, isNewUser: Bool) {
         let helper = SignInWithAppleHelper()
-        let response = try await helper.signIn()
-        let credential = OAuthProvider.credential(
-            providerID: AuthProviderID.apple,
-            idToken: response.token,
-            rawNonce: response.nonce
-        )
-           
-        if let user = Auth.auth().currentUser, user.isAnonymous {
-            do {
-                // Try to link to existing anonymous account
-                let result  = try await user.link(with: credential)
-                return result.asAuthInfo
-            } catch let error as NSError {
-                let authError = AuthErrorCode(rawValue: error.code)
-                switch authError {
-                case .providerAlreadyLinked, .credentialAlreadyInUse:
-                    if let secondaryCredential = error.userInfo["FIRAuthErrorUserInfoUpdatedCredentialKey"]  as? AuthCredential {
-                        let result = try await Auth.auth().signIn(with: secondaryCredential)
-                        return result.asAuthInfo
-                        
+        do {
+            let response = try await helper.signIn()
+            let credential = OAuthProvider.credential(
+                providerID: AuthProviderID.apple,
+                idToken: response.token,
+                rawNonce: response.nonce
+            )
+
+            if let user = Auth.auth().currentUser, user.isAnonymous {
+                do {
+                    let result = try await user.link(with: credential)
+                    return result.asAuthInfo
+                } catch let error as NSError {
+                    let authError = AuthErrorCode(rawValue: error.code)
+                    switch authError {
+                    case .providerAlreadyLinked, .credentialAlreadyInUse:
+                        if let secondaryCredential = error.userInfo["FIRAuthErrorUserInfoUpdatedCredentialKey"] as? AuthCredential {
+                            let result = try await Auth.auth().signIn(with: secondaryCredential)
+                            return result.asAuthInfo
+                        }
+                    default:
+                        break
                     }
-                default:
-                    break
+                    throw mapError(error)
                 }
             }
+
+            let result = try await Auth.auth().signIn(with: credential)
+            return result.asAuthInfo
+        } catch {
+            throw mapError(error)
         }
-        // Otherwise sign in to new account
-        let result = try await Auth.auth().signIn(with: credential)
-        return result.asAuthInfo
     }
     
     func signOut()  throws {
-        try  Auth.auth().signOut()
+        do {
+            try Auth.auth().signOut()
+        } catch {
+            throw mapError(error)
+        }
     }
     
     func deleteAccount() async throws {
-        
         guard let user = Auth.auth().currentUser else {
-            throw AuthError.userNotFound
+            throw AuthServiceError.notSignedIn
         }
-        try await user.delete()
+        do {
+            try await user.delete()
+        } catch {
+            throw mapError(error)
+        }
     }
-    enum AuthError: Error {
-        case userNotFound
-        
-        var description: String {
-            switch self {
+
+    private func mapError(_ error: Error) -> AuthServiceError {
+        let nsError = error as NSError
+        if let authError = AuthErrorCode(rawValue: nsError.code) {
+            switch authError {
+            case .networkError:
+                return .network
+            case .requiresRecentLogin:
+                return .requiresRecentLogin
             case .userNotFound:
-                return "Current authenticated user not found"
+                return .notSignedIn
+            default:
+                return .unknown(nsError.localizedDescription)
             }
         }
+        return .unknown(nsError.localizedDescription)
     }
-    
 }
 
 extension AuthDataResult {

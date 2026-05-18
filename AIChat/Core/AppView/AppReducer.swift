@@ -26,8 +26,8 @@ struct AppReducer {
 
     @ObservableState
     struct State: Equatable {
-        var authError: String?
         var destination: Destination.State = .launching
+        @Presents var alert: AlertState<Action.Alert>?
     }
 
     enum Action {
@@ -35,6 +35,13 @@ struct AppReducer {
         case onAppear
         case userStatusCheckSucceeded
         case userStatusCheckFailed(String)
+        case alert(PresentationAction<Alert>)
+
+        @CasePathable
+        enum Alert: Equatable {
+            case retryTapped
+            case dismissTapped
+        }
     }
 
     var body: some Reducer<State, Action> {
@@ -50,23 +57,53 @@ struct AppReducer {
                         try await checkUserStatus()
                         await send(.userStatusCheckSucceeded)
                     } catch {
-                        await send(.userStatusCheckFailed(error.localizedDescription))
+                        await send(.userStatusCheckFailed(errorMessage(for: error)))
                     }
                 }
 
             case .userStatusCheckSucceeded:
-                state.authError = nil
+                state.alert = nil
                 state.destination = hasCompletedOnboarding()
                     ? .tabBar(TabBarReducer.State())
                     : .welcome(WelcomeReducer.State())
                 return .none
 
             case .userStatusCheckFailed(let errorMessage):
-                state.authError = errorMessage
                 state.destination = .welcome(WelcomeReducer.State())
+                state.alert = AlertState(
+                    title: { TextState("Could not start app") },
+                    actions: {
+                        ButtonState(role: .cancel, action: .dismissTapped) {
+                            TextState("OK")
+                        }
+                        ButtonState(action: .retryTapped) {
+                            TextState("Try again")
+                        }
+                    },
+                    message: {
+                        TextState(errorMessage)
+                    }
+                )
+                return .none
+
+            case .alert(.presented(.retryTapped)):
+                state.alert = nil
+                state.destination = .launching
                 return .run { send in
-                    await send(.onAppear)
+                    do {
+                        try await checkUserStatus()
+                        await send(.userStatusCheckSucceeded)
+                    } catch {
+                        await send(.userStatusCheckFailed(errorMessage(for: error)))
+                    }
                 }
+
+            case .alert(.presented(.dismissTapped)):
+                state.alert = nil
+                return .none
+
+            case .alert(.dismiss):
+                return .none
 
             case .destination(.welcome(.delegate(.showOnboarding))):
                 state.destination = .onboarding(OnboardingReducer.State())
@@ -91,7 +128,7 @@ struct AppReducer {
                         try await checkUserStatus()
                         await send(.userStatusCheckSucceeded)
                     } catch {
-                        await send(.userStatusCheckFailed(error.localizedDescription))
+                        await send(.userStatusCheckFailed(errorMessage(for: error)))
                     }
                 }
 
@@ -102,7 +139,7 @@ struct AppReducer {
                         try await checkUserStatus()
                         await send(.userStatusCheckSucceeded)
                     } catch {
-                        await send(.userStatusCheckFailed(error.localizedDescription))
+                        await send(.userStatusCheckFailed(errorMessage(for: error)))
                     }
                 }
 
@@ -110,6 +147,7 @@ struct AppReducer {
                 return .none
             }
         }
+        .ifLet(\.$alert, action: \.alert)
     }
 
     // MARK: - Private Methods
@@ -126,5 +164,18 @@ struct AppReducer {
 
     private func hasCompletedOnboarding() -> Bool {
         userManager.currentUser?.didCompleteOnboarding == true
+    }
+}
+
+extension AppReducer {
+    private func errorMessage(for error: any Error) -> String {
+        switch error {
+        case let error as AuthServiceError:
+            error.errorDescription ?? "Something went wrong."
+        case let error as UserServiceError:
+            error.errorDescription ?? "Something went wrong."
+        default:
+            error.localizedDescription
+        }
     }
 }

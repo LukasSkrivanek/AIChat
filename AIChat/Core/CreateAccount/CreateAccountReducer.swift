@@ -6,6 +6,7 @@
 //
 
 import ComposableArchitecture
+import Foundation
 
 @Reducer
 struct CreateAccountReducer {
@@ -19,13 +20,20 @@ struct CreateAccountReducer {
         var title: String = "Create Account"
         var subtitle: String = "Don't lose your data! Connect to an SSO provider to save your account."
         var isLoading = false
+        @Presents var alert: AlertState<Action.Alert>?
     }
 
     enum Action {
         case signInAppleButtonTapped
         case signInAppleSucceeded(isNewUser: Bool)
         case signInAppleFailed(String)
+        case alert(PresentationAction<Alert>)
         case delegate(Delegate)
+
+        @CasePathable
+        enum Alert: Equatable {
+            case dismiss
+        }
 
         @CasePathable
         enum Delegate: Equatable {
@@ -44,7 +52,7 @@ struct CreateAccountReducer {
                         try await userManager.logIn(auth: result.user, isNewUser: result.isNewUser)
                         await send(.signInAppleSucceeded(isNewUser: result.isNewUser))
                     } catch {
-                        await send(.signInAppleFailed(error.localizedDescription))
+                        await send(.signInAppleFailed(errorMessage(for: error)))
                     }
                 }
 
@@ -55,13 +63,45 @@ struct CreateAccountReducer {
                     await dismiss()
                 }
 
-            case .signInAppleFailed:
+            case .signInAppleFailed(let message):
                 state.isLoading = false
+                state.alert = AlertState(
+                    title: { TextState("Sign in failed") },
+                    actions: {
+                        ButtonState(action: .dismiss) {
+                            TextState("OK")
+                        }
+                    },
+                    message: {
+                        TextState(message)
+                    }
+                )
+                return .none
+
+            case .alert(.presented(.dismiss)):
+                state.alert = nil
+                return .none
+
+            case .alert(.dismiss):
                 return .none
 
             case .delegate:
                 return .none
             }
+        }
+        .ifLet(\.$alert, action: \.alert)
+    }
+}
+
+extension CreateAccountReducer {
+    private func errorMessage(for error: any Error) -> String {
+        switch error {
+        case let error as AuthServiceError:
+            error.errorDescription ?? "Something went wrong."
+        case let error as UserServiceError:
+            error.errorDescription ?? "Something went wrong."
+        default:
+            error.localizedDescription
         }
     }
 }

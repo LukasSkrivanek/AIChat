@@ -8,6 +8,21 @@
 import Foundation
 import FirebaseFirestore
 
+struct MockUserServices {
+    
+    let currentUser: UserModel?
+
+    private let remoteService: RemoteUserService
+    private let localService: LocalUserService
+
+    init(user: UserModel? = nil) {
+        self.remoteService = MockUserService()
+        self.localService = MockFileManagerUserPersistence()
+        self.currentUser = user
+    }
+    
+}
+
 @Observable
 final class UserManager: ObservableObject {
 

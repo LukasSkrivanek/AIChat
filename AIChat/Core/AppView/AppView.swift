@@ -71,13 +71,6 @@ struct AppView: View {
         .onAppear {
             store.send(.onAppear)
         }
-        .overlay {
-            if let error = store.authError {
-                VStack {
-                    Text("Error: \(error)")
-                        .foregroundColor(.red)
-                }
-            }
-        }
+        .alert(store: store.scope(state: \.$alert, action: \.alert))
     }
 }
