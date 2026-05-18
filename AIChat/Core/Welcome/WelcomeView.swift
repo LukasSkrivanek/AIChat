@@ -6,16 +6,16 @@
 //
 
 import SwiftUI
+import ComposableArchitecture
 
 struct WelcomeView: View {
-    @Environment(AppState.self) private var root
-     
-    @State private var imageName: String = Constants.randomImage
-    @State private var showSignInView: Bool = false
+
+    @Bindable var store: StoreOf<WelcomeReducer>
+
     var body: some View {
         NavigationStack {
             VStack {
-                ImageLoaderView(urlString: imageName)
+                ImageLoaderView(urlString: Constants.randomImage)
                     .ignoresSafeArea()
                     .frame(maxHeight: .infinity)
                 titleSection
@@ -33,16 +33,12 @@ struct WelcomeView: View {
                     .foregroundStyle(.accent)
             }
         }
-        .sheet(isPresented: $showSignInView) {
-            CreateAccountView(title: "Sign in", subtitle: "Connect to an existing account.",
-                              onDidSignIn: { isNewUser in
-                handleDidSignIn(isNewUser: isNewUser)
-            }
-            )
-            .presentationDetents([.medium])
+        .sheet(item: $store.scope(state: \.createAccount, action: \.createAccount)) { createAccountStore in
+            CreateAccountView(store: createAccountStore)
+                .presentationDetents([.medium])
         }
     }
-    
+
     private var titleSection: some View {
         VStack {
             Text("AI Chat 👍")
@@ -53,7 +49,7 @@ struct WelcomeView: View {
                 .foregroundStyle(.secondary)
         }
     }
-    
+
     private var ctaButtons: some View {
         VStack(alignment: .center, spacing: 2) {
             Text("Already have an account? Sign in")
@@ -61,13 +57,11 @@ struct WelcomeView: View {
                 .padding(8)
                 .tappableBackground()
                 .onTapGesture {
-                    onSignInButtonTap()
-                    
+                    store.send(.signInButtonTapped)
                 }
-            
         }
     }
-    
+
     private var policySection: some View {
         HStack(spacing: 8) {
             Link(destination: URL(string: Constants.privacyPolicyUrl)!) {
@@ -79,22 +73,14 @@ struct WelcomeView: View {
             Link(destination: URL(string: Constants.privacyPolicyUrl)!) {
                 Text("Privacy Policy")
             }
-            
         }
-    }
-    private func handleDidSignIn(isNewUser: Bool) {
-        if isNewUser {
-            // Do nothing, user goes through onboarding
-        } else {
-            // push into tabBar view
-            root.updateViewState(showTabBarView: true)
-        }
-    }
-    private func onSignInButtonTap() {
-        showSignInView.toggle()
     }
 }
 
 #Preview {
-    WelcomeView()
+    WelcomeView(
+        store: Store(initialState: WelcomeReducer.State()) {
+            WelcomeReducer()
+        }
+    )
 }

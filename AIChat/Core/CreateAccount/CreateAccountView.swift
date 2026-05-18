@@ -6,24 +6,23 @@
 //
 
 import SwiftUI
+import ComposableArchitecture
 
 struct CreateAccountView: View {
-    @Environment(AuthManager.self) private var authManager
-    @Environment(\.dismiss) private var dismiss
-    var title: String = "Create Account"
-    var subtitle: String = "Don't lose your data! Connect to an SSO provider to save your account."
-    var onDidSignIn: ((_ isNewUser: Bool) -> Void )?
+
+    @Bindable var store: StoreOf<CreateAccountReducer>
+
     var body: some View {
         VStack(spacing: 24) {
             VStack(alignment: .leading, spacing: 8) {
-                Text(title)
+                Text(store.title)
                     .font(.largeTitle)
                     .fontWeight(.semibold)
-                Text(subtitle)
+                Text(store.subtitle)
                     .font(.body)
             }
             .frame(maxWidth: .infinity, alignment: .leading)
-            
+
             SignInWithAppleButtonView(
                 type: .signIn,
                 style: .black,
@@ -31,27 +30,19 @@ struct CreateAccountView: View {
             )
             .frame(height: 55)
             .anyButton(.press) {
-                onSignInApplePress()
+                store.send(.signInAppleButtonTapped)
             }
             Spacer()
         }
         .padding(16)
         .padding(.top, 40)
     }
-    func onSignInApplePress() {
-        Task {
-            do {
-                let result = try await authManager.signInApple()
-                onDidSignIn?(result.isNewUser)
-                dismiss()
-            } catch {
-                
-            }
-        }
-    }
-    
 }
 
 #Preview {
-    CreateAccountView()
+    CreateAccountView(
+        store: Store(initialState: CreateAccountReducer.State()) {
+            CreateAccountReducer()
+        }
+    )
 }

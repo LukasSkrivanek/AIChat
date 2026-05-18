@@ -28,7 +28,9 @@ struct ProfileView: View {
                 }
             }
             .sheet(isPresented: $showSettingsView) {
-                SettingsView()
+                SettingsView(store: .init(initialState: .init()) {
+                    SettingsReducer()
+                })
             }
             .fullScreenCover(isPresented: $showSCreateAvatarView) {
                 CreateAvatar()
@@ -129,5 +131,4 @@ struct ProfileView: View {
 
 #Preview {
     ProfileView()
-        .environment(AppState())
 }

@@ -5,17 +5,13 @@
 //  Created by macbook on 18.12.2024.
 //
 import SwiftUI
+import ComposableArchitecture
 
 struct SettingsView: View {
-    @Environment(\.dismiss) private var dismiss
-    @Environment(AuthManager.self) private var authManager
 
-    @Environment(AppState.self) private var appState
-    @State private var isPremium: Bool = true
-    @State private var isAnonymousUser: Bool = false
-    @State private var showCreateAccountView: Bool = false
-    @State private var showAlert: AnyAppAlert?
-    
+    @Bindable var store: StoreOf<SettingsReducer>
+    @Environment(\.dismiss) private var dismiss
+
     var body: some View {
         NavigationStack {
             List {
@@ -27,58 +23,60 @@ struct SettingsView: View {
                     .removeListRowFormatting()
             }
             .navigationTitle("Settings")
-            .sheet(isPresented: $showCreateAccountView, onDismiss: {
-                setAnonymousStatus()
-            }, content: {
-                CreateAccountView()
+            .sheet(item: $store.scope(state: \.createAccount, action: \.createAccount)) { createAccountStore in
+                CreateAccountView(store: createAccountStore)
                     .presentationDetents([.medium])
-            })
+            }
             .onAppear {
-                setAnonymousStatus()
+                store.send(.onAppear)
             }
         }
-        .showCustomAlert(alert: $showAlert)
+        .alert($store.scope(state: \.alert, action: \.alert))
         .background(Color(uiColor: .systemBackground))
-        
+        .onChange(of: store.shouldDismiss) { _, shouldDismiss in
+            if shouldDismiss {
+                dismiss()
+                store.send(.didDismiss)
+            }
+        }
     }
     
     private var accountSection: some View {
         Section {
-            if isAnonymousUser {
+            if store.isAnonymousUser {
                 Text("Save & back-up account")
                     .padding(.leading)
                     .rowFormatting()
                     .anyButton(.highlight) {
-                        onCreateAccountPressed()
+                        store.send(.createAccountButtonTapped)
                     }
             } else {
                 Text("Sign out")
                     .padding(.leading)
                     .rowFormatting()
                     .anyButton(.highlight) {
-                         onSignOutPressed()
+                        store.send(.signOutButtonTapped)
                     }
             }
-           
+
             Text("Delete account")
                 .padding(.leading)
                 .foregroundStyle(.red)
                 .rowFormatting()
                 .anyButton(.highlight) {
-                    onDeleteAccountPress()
+                    store.send(.deleteAccountButtonTapped)
                 }
         } header: {
             Text("Account")
         }
-        
     }
     private var purchaseSection: some View {
         Section {
             HStack(spacing: 8) {
-                Text("Account status: \(isPremium ? "Premium" : "Free")")
+                Text("Account status: \(store.isPremium ? "Premium" : "Free")")
                     .padding(.leading)
                 Spacer(minLength: 0)
-                if isPremium {
+                if store.isPremium {
                     Text("MANAGE")
                         .badgeButton()
                         .padding(.trailing)
@@ -88,7 +86,7 @@ struct SettingsView: View {
                 .anyButton(.highlight) {
                 
                 }
-                .disabled(!isPremium)
+                .disabled(!store.isPremium)
         } header: {
             Text("Purchases")
         }
@@ -130,52 +128,6 @@ struct SettingsView: View {
                 .baselineOffset(6)
         }
     }
-    private func onDeleteAccountPress() {
-        showAlert = AnyAppAlert(
-            title: "Delete account?",
-            subtitle: "This action is permanent and cannot be undone. Your data will be deleted from our server. ",
-            buttons: {
-                AnyView(
-                    Button("Delete", role: .destructive) {
-                        onDeleteAccountConfirmed()
-                    })
-                
-            }
-        )
-        
-    }
-    private func onDeleteAccountConfirmed() {
-        Task {
-            do {
-                try await authManager.deleteAccount()
-                await dismissScreen()
-            } catch {
-                showAlert = AnyAppAlert(error: error)
-            }
-        }
-    }
-    private func onSignOutPressed() {
-        // do some logic to sign user out of
-        Task {
-            do {
-                try authManager.signOut()
-                await dismissScreen()
-            } catch {
-                showAlert = AnyAppAlert(error: error)
-            }
-        }
-    }
-    private func dismissScreen() async {
-        dismiss()
-        try? await Task.sleep(for: .seconds(1))
-        appState.updateViewState(showTabBarView: false)
-    }
-    private func onCreateAccountPressed() {
-        showCreateAccountView.toggle()
-    }
-    private func setAnonymousStatus() {
-        isAnonymousUser = authManager.auth?.isAnonymous == true
-    }
 }
 
 fileprivate extension View {
@@ -189,19 +141,28 @@ fileprivate extension View {
 }
 
 #Preview("No auth") {
-    SettingsView()
-        .environment(AuthManager(service: MockAuthService(user: nil )))
-        .environment(AppState())
+    SettingsView(
+        store: Store(initialState: SettingsReducer.State()) {
+            SettingsReducer()
+                .dependency(\.authManager, AuthManager(service: MockAuthService(user: nil)))
+        }
+    )
 }
 
 #Preview("Anonymous") {
-    SettingsView()
-        .environment(AuthManager(service: MockAuthService(user: UserAuthInfo.mock(isAnonymous: true))))
-        .environment(AppState())
+    SettingsView(
+        store: Store(initialState: SettingsReducer.State()) {
+            SettingsReducer()
+                .dependency(\.authManager, AuthManager(service: MockAuthService(user: UserAuthInfo.mock(isAnonymous: true))))
+        }
+    )
 }
 
 #Preview("No Anonymous") {
-    SettingsView()
-        .environment(AuthManager(service: MockAuthService(user: UserAuthInfo.mock(isAnonymous: false))))
-        .environment(AppState())
+    SettingsView(
+        store: Store(initialState: SettingsReducer.State()) {
+            SettingsReducer()
+                .dependency(\.authManager, AuthManager(service: MockAuthService(user: UserAuthInfo.mock(isAnonymous: false))))
+        }
+    )
 }

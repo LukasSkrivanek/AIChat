@@ -6,65 +6,57 @@
 //
 
 import SwiftUI
-// tabbar - signed in
-// onboarding - signed out
+import ComposableArchitecture
+
+extension UserManager: DependencyKey {
+    static let liveValue = UserManager(service: FirebaseUserService())
+}
+
+extension DependencyValues {
+    var userManager: UserManager {
+        get { self[UserManager.self] }
+        set { self[UserManager.self] = newValue }
+    }
+}
+
+extension AuthManager: DependencyKey {
+    static let liveValue = AuthManager(service: MockAuthService())
+}
+
+extension DependencyValues {
+    var authManager: AuthManager {
+        get { self[AuthManager.self] }
+        set { self[AuthManager.self] = newValue }
+    }
+}
 
 struct AppView: View {
-    @Environment(UserManager.self) private var userManager
-    @Environment(AuthManager.self) private var authManager
-    @State var appState: AppState = AppState()
+
+    @Bindable var store: StoreOf<AppReducer>
+
     var body: some View {
-        AppViewBuilder(showTabBar: appState.showTabBar,
-                       tabbarView: {
-            TabBarView()
-        }, onboardingView: {
-            WelcomeView()
-        })
-        .environment(appState)
-        .task {
-            await checkUserStatus()
+        AppViewBuilder(
+            showTabBar: store.showTabBar,
+            tabbarView: {
+                TabBarView()
+            },
+            onboardingView: {
+                WelcomeView(store: store.scope(state: \.welcome, action: \.welcome))
+            }
+        )
+        .onAppear {
+            store.send(.onAppear)
         }
-        .onChange(of: appState.showTabBar) { _, showTabBar in
-            if !showTabBar {
-                Task {
-                    await checkUserStatus()
+        .onChange(of: store.showTabBar) { _, showTabBar in
+            store.send(.showTabBarChanged(showTabBar))
+        }
+        .overlay {
+            if let error = store.authError {
+                VStack {
+                    Text("Error: \(error)")
+                        .foregroundColor(.red)
                 }
             }
         }
-        
     }
-    private func checkUserStatus() async {
-        if let user  = authManager.auth {
-            // User is authenticated
-            print("User is authenticated: \(user.uId)")
-            do {
-                try await userManager.logIn(auth: user, isNewUser: false)
-            } catch  {
-                print("Failed to log in to auth for existing user: \(error)")
-                try? await Task.sleep(for: .seconds(5))
-                await checkUserStatus()
-            }
-        } else {
-            // User is not authenticated
-            do {
-               let result =  try await authManager.signInAnonymously()
-                // log in to app
-                print("Sign in anonymously: \(result.user.uId)")
-                try await userManager.logIn(auth: result.user, isNewUser: result.isNewUser)
-            } catch {
-                print("Failed to sign in anonymously: \(error)")
-                try? await Task.sleep(for: .seconds(5))
-                await checkUserStatus()
-
-            }
-        }
-    }
-}
-
-#Preview("AppView - TabBar") {
-    AppView(appState: AppState(showTabBar: true))
-}
-
-#Preview("AppView - Onboarding") {
-    AppView(appState: AppState(showTabBar: false))
 }

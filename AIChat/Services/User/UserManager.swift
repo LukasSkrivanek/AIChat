@@ -7,12 +7,12 @@
 
 import Foundation
 import Observation
+import FirebaseFirestore
 
 protocol UserService: Sendable {
     func saveUser(user: UserModel) async throws
 }
 
-import FirebaseFirestore
 struct FirebaseUserService: UserService {
     var collection: CollectionReference {
         Firestore.firestore().collection("users")
@@ -23,9 +23,9 @@ struct FirebaseUserService: UserService {
     }
 }
 
-@MainActor
+
 @Observable
-class UserManager: ObservableObject {
+final class UserManager: ObservableObject {
     private let service: UserService
     private(set) var currentUser: UserModel?
     
