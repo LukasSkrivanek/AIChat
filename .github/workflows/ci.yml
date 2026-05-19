@@ -120,6 +120,8 @@ jobs:
             -clonedSourcePackagesDirPath "$SPM_CACHE_PATH" \
             -only-testing:AIChatTests \
             -resultBundlePath "$RESULT_BUNDLE_PATH" \
+            -skipMacroValidation \
+            -skipPackagePluginValidation \
             CODE_SIGNING_ALLOWED=NO
 
       - name: Upload test artifacts
