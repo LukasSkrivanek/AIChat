@@ -6,11 +6,6 @@ on:
       - ".github/workflows/**"
       - ".github/actions/**"
       - ".github/scripts/**"
-  push:
-    paths:
-      - ".github/workflows/**"
-      - ".github/actions/**"
-      - ".github/scripts/**"
   workflow_dispatch:
 
 concurrency:
