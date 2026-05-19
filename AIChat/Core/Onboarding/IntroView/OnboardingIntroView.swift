@@ -10,7 +10,7 @@ import SwiftUI
 
 struct OnboardingIntroView: View {
 
-    let store: StoreOf<OnboardingReducer>
+    @Bindable var store: StoreOf<OnboardingReducer>
 
     var body: some View {
         ZStack {
@@ -33,7 +33,7 @@ struct OnboardingIntroView: View {
             }
         }
         .animation(.smooth(duration: 0.35), value: store.step)
-        .alert(store: store.scope(state: \.$alert, action: \.alert))
+        .alert($store.scope(state: \.alert, action: \.alert))
     }
 
     private var introStep: some View {

@@ -36,7 +36,7 @@ struct CreateAccountView: View {
         }
         .padding(16)
         .padding(.top, 40)
-        .alert(store: store.scope(state: \.$alert, action: \.alert))
+        .alert($store.scope(state: \.alert, action: \.alert))
     }
 }
 
