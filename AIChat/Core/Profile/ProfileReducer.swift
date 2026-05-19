@@ -11,6 +11,11 @@ import Foundation
 @Reducer
 struct ProfileReducer {
 
+    @Reducer
+    enum Path {
+        case chat(ChatReducer)
+    }
+
     @Dependency(\.authManager)
     var authManager
     @Dependency(\.userManager)
@@ -21,7 +26,7 @@ struct ProfileReducer {
         var currentUser: UserModel? = .mock
         var myAvatars: [AvatarModel] = []
         var isLoading: Bool = true
-        var path: [NavigationPathOption] = []
+        var path = StackState<Path.State>()
         var showCreateAvatar: Bool = false
         @Presents var settings: SettingsReducer.State?
     }
@@ -35,7 +40,7 @@ struct ProfileReducer {
         case avatarTapped(AvatarModel)
         case deleteAvatar(IndexSet)
         case delegate(Delegate)
-        case pathChanged([NavigationPathOption])
+        case path(StackActionOf<Path>)
         case settings(PresentationAction<SettingsReducer.Action>)
 
         @CasePathable
@@ -83,7 +88,15 @@ struct ProfileReducer {
                 return .none
 
             case .avatarTapped(let avatar):
-                state.path.append(.chat(avatarId: avatar.avatarId))
+                state.path.append(
+                    .chat(
+                        ChatReducer.State(
+                            currentUser: state.currentUser,
+                            avatar: avatar,
+                            avatarId: avatar.avatarId
+                        )
+                    )
+                )
                 return .none
 
             case .deleteAvatar(let indexSet):
@@ -91,16 +104,15 @@ struct ProfileReducer {
                 state.myAvatars.remove(at: index)
                 return .none
 
-            case .pathChanged(let path):
-                state.path = path
-                return .none
-
-            case .delegate, .settings:
+            case .delegate, .settings, .path:
                 return .none
             }
         }
+        .forEach(\.path, action: \.path)
         .ifLet(\.$settings, action: \.settings) {
             SettingsReducer()
         }
     }
 }
+
+extension ProfileReducer.Path.State: Equatable {}

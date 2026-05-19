@@ -13,23 +13,12 @@ struct ProfileView: View {
     @Bindable var store: StoreOf<ProfileReducer>
 
     var body: some View {
-        NavigationStack(
-            path: Binding(
-                get: { store.path },
-                set: { store.send(.pathChanged($0)) }
-            )
-        ) {
+        NavigationStack(path: $store.scope(state: \.path, action: \.path)) {
             List {
                 myInfoSection
                 myAvatarsSection
             }
             .navigationTitle("Profile")
-            .navigationDestinationForCoreModule(
-                path: Binding(
-                    get: { store.path },
-                    set: { store.send(.pathChanged($0)) }
-                )
-            )
             .toolbar {
                 ToolbarItem(placement: .topBarTrailing) {
                     settingsButton
@@ -48,6 +37,11 @@ struct ProfileView: View {
             }
             .task {
                 store.send(.task)
+            }
+        } destination: { store in
+            switch store.case {
+            case .chat(let store):
+                ChatView(store: store)
             }
         }
     }
