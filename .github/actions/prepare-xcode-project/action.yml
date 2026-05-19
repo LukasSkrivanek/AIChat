@@ -1,0 +1,46 @@
+name: Prepare Xcode Project
+description: Select Xcode, verify the shared scheme, and resolve dependencies.
+
+inputs:
+  xcode-version:
+    description: Xcode version to select.
+    required: true
+  project:
+    description: Xcode project path.
+    required: true
+  scheme:
+    description: Shared scheme to use.
+    required: true
+  spm-cache-path:
+    description: Local path for cloned Swift packages.
+    required: true
+
+runs:
+  using: composite
+  steps:
+    - name: Select Xcode ${{ inputs.xcode-version }}
+      uses: maxim-lobanov/setup-xcode@v1
+      with:
+        xcode-version: ${{ inputs.xcode-version }}
+
+    - name: Show toolchain
+      shell: bash
+      run: |
+        set -euo pipefail
+        xcodebuild -version
+
+    - name: Verify shared scheme
+      shell: bash
+      run: |
+        set -euo pipefail
+        test -f "${{ inputs.project }}/xcshareddata/xcschemes/${{ inputs.scheme }}.xcscheme"
+
+    - name: Resolve package dependencies
+      shell: bash
+      run: |
+        set -euo pipefail
+
+        xcodebuild -resolvePackageDependencies \
+          -project "${{ inputs.project }}" \
+          -scheme "${{ inputs.scheme }}" \
+          -clonedSourcePackagesDirPath "${{ inputs.spm-cache-path }}"
