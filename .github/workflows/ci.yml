@@ -54,9 +54,7 @@ jobs:
       - name: Run SwiftLint
         run: |
           set -euo pipefail
-          swiftlint lint \
-            --config AIChat/.swiftlint.yml \
-            AIChat AIChatTests AIChatUITests
+          swiftlint lint --config AIChat/.swiftlint.yml
 
   unit-tests:
     name: Unit tests
