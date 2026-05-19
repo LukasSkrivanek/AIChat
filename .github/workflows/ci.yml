@@ -17,7 +17,7 @@ defaults:
     shell: bash
 
 env:
-  XCODE_VERSION: "16.2"
+  XCODE_VERSION: "16.4"
   PROJECT: AIChat.xcodeproj
   SCHEME: AIChat
   DERIVED_DATA_PATH: .derivedData
