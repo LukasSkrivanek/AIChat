@@ -1,0 +1,139 @@
+name: iOS Quality
+
+on:
+  pull_request:
+  workflow_dispatch:
+
+concurrency:
+  group: ${{ github.workflow }}-${{ github.ref }}
+  cancel-in-progress: true
+
+permissions:
+  contents: read
+
+defaults:
+  run:
+    shell: bash
+
+env:
+  XCODE_VERSION: "16.4"
+  PROJECT: AIChat.xcodeproj
+  SCHEME: AIChat
+  DERIVED_DATA_PATH: ${{ github.workspace }}/.derivedData
+  SPM_CACHE_PATH: ${{ github.workspace }}/.spm
+  RESULT_BUNDLE_PATH: ${{ github.workspace }}/TestResults.xcresult
+  PACKAGE_RESOLVED_PATH: AIChat.xcodeproj/project.xcworkspace/xcshareddata/swiftpm/Package.resolved
+
+jobs:
+  lint:
+    name: SwiftLint
+    runs-on: macos-15
+    timeout-minutes: 10
+
+    steps:
+      - name: Check out repository
+        uses: actions/checkout@v4
+
+      - name: Select Xcode ${{ env.XCODE_VERSION }}
+        uses: maxim-lobanov/setup-xcode@v1
+        with:
+          xcode-version: ${{ env.XCODE_VERSION }}
+
+      - name: Install SwiftLint if needed
+        run: |
+          set -euo pipefail
+
+          if command -v swiftlint >/dev/null 2>&1; then
+            swiftlint version
+            exit 0
+          fi
+
+          brew install swiftlint
+          swiftlint version
+
+      - name: Run SwiftLint
+        run: |
+          set -euo pipefail
+          swiftlint lint --config AIChat/.swiftlint.yml
+
+  unit-tests:
+    name: Unit tests
+    runs-on: macos-15
+    timeout-minutes: 30
+    needs: lint
+
+    steps:
+      - name: Check out repository
+        uses: actions/checkout@v4
+
+      - name: Select Xcode ${{ env.XCODE_VERSION }}
+        uses: maxim-lobanov/setup-xcode@v1
+        with:
+          xcode-version: ${{ env.XCODE_VERSION }}
+
+      - name: Cache Swift packages
+        uses: actions/cache@v4
+        with:
+          path: ${{ env.SPM_CACHE_PATH }}
+          key: ${{ runner.os }}-spm-${{ env.XCODE_VERSION }}-${{ hashFiles(env.PACKAGE_RESOLVED_PATH) }}
+          restore-keys: |
+            ${{ runner.os }}-spm-${{ env.XCODE_VERSION }}-
+
+      - name: Run unit tests
+        run: |
+          set -euo pipefail
+
+          xcodebuild -version
+
+          defaults write com.apple.dt.Xcode IDESkipMacroFingerprintValidation -bool YES
+          defaults write com.apple.dt.Xcode IDESkipPackagePluginFingerprintValidation -bool YES
+          defaults write com.apple.dt.Xcode IDESkipPackagePluginFingerprintValidatation -bool YES
+
+          test -f "${PROJECT}/xcshareddata/xcschemes/${SCHEME}.xcscheme"
+
+          mkdir -p "$SPM_CACHE_PATH"
+          mkdir -p "$DERIVED_DATA_PATH"
+          rm -rf "$RESULT_BUNDLE_PATH"
+
+          xcodebuild -resolvePackageDependencies \
+            -project "$PROJECT" \
+            -scheme "$SCHEME" \
+            -clonedSourcePackagesDirPath "$SPM_CACHE_PATH" \
+            -derivedDataPath "$DERIVED_DATA_PATH"
+
+          SIMULATOR_ID="$(
+            xcodebuild -showdestinations \
+              -project "$PROJECT" \
+              -scheme "$SCHEME" \
+            | grep -F "platform:iOS Simulator" \
+            | grep -F "name:iPhone" \
+            | head -n 1 \
+            | sed -nE 's/.*id:([^,}]+).*/\1/p'
+          )"
+
+          if [[ -z "$SIMULATOR_ID" ]]; then
+            echo "No available iPhone simulator found."
+            exit 1
+          fi
+
+          xcodebuild test \
+            -project "$PROJECT" \
+            -scheme "$SCHEME" \
+            -destination "id=$SIMULATOR_ID" \
+            -derivedDataPath "$DERIVED_DATA_PATH" \
+            -clonedSourcePackagesDirPath "$SPM_CACHE_PATH" \
+            -only-testing:AIChatTests \
+            -resultBundlePath "$RESULT_BUNDLE_PATH" \
+            -skipMacroValidation \
+            -skipPackagePluginValidation \
+            CODE_SIGNING_ALLOWED=NO
+
+      - name: Upload test artifacts
+        if: failure()
+        uses: actions/upload-artifact@v4
+        with:
+          name: xcode-test-artifacts
+          path: |
+            ${{ env.RESULT_BUNDLE_PATH }}
+            ${{ env.DERIVED_DATA_PATH }}/Logs/Build/*
+          if-no-files-found: ignore
