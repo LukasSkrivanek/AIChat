@@ -1,0 +1,137 @@
+name: CI
+
+on:
+  pull_request:
+  push:
+  workflow_dispatch:
+
+concurrency:
+  group: ci-${{ github.workflow }}-${{ github.ref }}
+  cancel-in-progress: true
+
+env:
+  XCODE_VERSION: "16.2"
+  PROJECT: AIChat.xcodeproj
+  SCHEME: AIChat
+  DERIVED_DATA_PATH: .derivedData
+  SPM_CACHE_PATH: .spm
+  PACKAGE_RESOLVED_PATH: AIChat.xcodeproj/project.xcworkspace/xcshareddata/swiftpm/Package.resolved
+
+jobs:
+  lint:
+    name: SwiftLint
+    runs-on: macos-15
+    timeout-minutes: 10
+
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v4
+
+      - name: Select Xcode ${{ env.XCODE_VERSION }}
+        uses: maxim-lobanov/setup-xcode@v1
+        with:
+          xcode-version: ${{ env.XCODE_VERSION }}
+
+      - name: Install SwiftLint if needed
+        run: |
+          if command -v swiftlint >/dev/null 2>&1; then
+            swiftlint version
+          else
+            brew install swiftlint
+          fi
+
+      - name: Run SwiftLint
+        run: swiftlint --config AIChat/.swiftlint.yml
+
+  unit-tests:
+    name: Build and Unit Tests
+    runs-on: macos-15
+    timeout-minutes: 30
+    needs: lint
+
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v4
+
+      - name: Select Xcode ${{ env.XCODE_VERSION }}
+        uses: maxim-lobanov/setup-xcode@v1
+        with:
+          xcode-version: ${{ env.XCODE_VERSION }}
+
+      - name: Show toolchain
+        run: xcodebuild -version
+
+      - name: Verify shared scheme
+        run: test -f "${{ env.PROJECT }}/xcshareddata/xcschemes/${{ env.SCHEME }}.xcscheme"
+
+      - name: Cache Swift packages
+        uses: actions/cache@v4
+        with:
+          path: ${{ env.SPM_CACHE_PATH }}
+          key: ${{ runner.os }}-spm-${{ env.XCODE_VERSION }}-${{ hashFiles(env.PACKAGE_RESOLVED_PATH) }}
+          restore-keys: |
+            ${{ runner.os }}-spm-${{ env.XCODE_VERSION }}-
+
+      - name: Resolve package dependencies
+        run: |
+          xcodebuild -resolvePackageDependencies \
+            -project "$PROJECT" \
+            -scheme "$SCHEME" \
+            -clonedSourcePackagesDirPath "$SPM_CACHE_PATH"
+
+      - name: Select simulator destination
+        id: simulator
+        run: |
+          SIMULATOR_LINE="$(
+            xcodebuild -showdestinations \
+              -project "$PROJECT" \
+              -scheme "$SCHEME" \
+            | grep -F "platform:iOS Simulator" \
+            | grep -F "name:iPhone" \
+            | head -n 1 \
+          )"
+
+          if [ -z "$SIMULATOR_LINE" ]; then
+            echo "No iPhone simulator destination found."
+            exit 1
+          fi
+
+          SIMULATOR_ID="$(printf '%s\n' "$SIMULATOR_LINE" | sed -nE 's/.*id:([^,}]+).*/\1/p')"
+          SIMULATOR_NAME="$(printf '%s\n' "$SIMULATOR_LINE" | sed -nE 's/.*name:([^,}]+).*/\1/p')"
+
+          if [ -z "$SIMULATOR_ID" ]; then
+            echo "Unable to parse simulator identifier from: $SIMULATOR_LINE"
+            exit 1
+          fi
+
+          echo "destination=id=$SIMULATOR_ID" >> "$GITHUB_OUTPUT"
+          echo "Using simulator: $SIMULATOR_NAME ($SIMULATOR_ID)"
+
+      - name: Build for testing
+        run: |
+          xcodebuild build-for-testing \
+            -project "$PROJECT" \
+            -scheme "$SCHEME" \
+            -destination "${{ steps.simulator.outputs.destination }}" \
+            -derivedDataPath "$DERIVED_DATA_PATH" \
+            -clonedSourcePackagesDirPath "$SPM_CACHE_PATH" \
+            CODE_SIGNING_ALLOWED=NO
+
+      - name: Run unit tests
+        run: |
+          xcodebuild test-without-building \
+            -project "$PROJECT" \
+            -scheme "$SCHEME" \
+            -destination "${{ steps.simulator.outputs.destination }}" \
+            -derivedDataPath "$DERIVED_DATA_PATH" \
+            -clonedSourcePackagesDirPath "$SPM_CACHE_PATH" \
+            -only-testing:AIChatTests \
+            CODE_SIGNING_ALLOWED=NO
+
+      - name: Upload test results
+        if: failure()
+        uses: actions/upload-artifact@v4
+        with:
+          name: xcresult
+          path: .derivedData/Logs/Test/*.xcresult
+          if-no-files-found: ignore

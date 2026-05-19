@@ -21,26 +21,38 @@ struct AIChatTests {
     @Test
     func testSendMessageSuccess() async {
         let user = UserModel.mock
+        let firstUUID = UUID(uuidString: "00000000-0000-0000-0000-000000000000")!
+        let secondUUID = UUID(uuidString: "00000000-0000-0000-0000-000000000001")!
+
         let store = TestStore(
             initialState: ChatReducer.State(
-                chatMessages: [],
                 textFieldText: "Hi SwiftTesting",
-                scrollPosition: nil,
-                showProfileModal: false,
-                alert: nil,
-                currentUser: user,
-                avatar: .mock,
-                avatarId: AvatarModel.mock.avatarId
+                currentUser: user
             ),
             reducer: { ChatReducer()
             }, withDependencies: {
-                $0.uuid = .incrementing
+                var uuids = [firstUUID, secondUUID].makeIterator()
+                $0.uuid = .init {
+                    uuids.next()!
+                }
                 $0.date.now = Date(timeIntervalSinceReferenceDate: 1976)
             }
         )
 
-        store.exhaustivity = .off
-        await store.send(.onSendMessageTapped)
+        await store.send(.onSendMessageTapped) {
+            $0.chatMessages = [
+                ChatMessageModel(
+                    id: firstUUID.uuidString,
+                    chatId: secondUUID.uuidString,
+                    authorId: user.userId,
+                    content: "Hi SwiftTesting",
+                    seenByIds: nil,
+                    dateCreated: Date(timeIntervalSinceReferenceDate: 1976)
+                )
+            ]
+            $0.textFieldText = ""
+            $0.scrollPosition = firstUUID.uuidString
+        }
 
         #expect(store.state.chatMessages.count == 1)
         #expect(store.state.chatMessages.first?.content == "Hi SwiftTesting")
