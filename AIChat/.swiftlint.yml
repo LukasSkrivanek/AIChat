@@ -1,7 +1,7 @@
 included:
-  - AIChat
-  - AIChatTests
-  - AIChatUITests
+  - .
+  - ../AIChatTests
+  - ../AIChatUITests
 
 line_length:
   warning: 300  # Set a warning when lines exceed 300 characters
@@ -14,8 +14,8 @@ disabled_rules:
   - trailing_whitespace
 
 excluded:
-  - .git
-  - Pods
-  - Carthage
-  - .spm
-  - .derivedData
+  - ../.git
+  - ../Pods
+  - ../Carthage
+  - ../.spm
+  - ../.derivedData
