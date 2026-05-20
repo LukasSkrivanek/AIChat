@@ -33,6 +33,17 @@ extension DependencyValues {
     }
 }
 
+extension SessionManager: DependencyKey {
+    static let liveValue = SessionManager()
+}
+
+extension DependencyValues {
+    var sessionManager: SessionManager {
+        get { self[SessionManager.self] }
+        set { self[SessionManager.self] = newValue }
+    }
+}
+
 struct AppView: View {
 
     @Bindable var store: StoreOf<AppReducer>

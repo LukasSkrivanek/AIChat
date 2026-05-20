@@ -19,10 +19,8 @@ struct AppReducer {
         case welcome(WelcomeReducer)
     }
 
-    @Dependency(\.userManager)
-    var userManager
-    @Dependency(\.authManager)
-    var authManager
+    @Dependency(\.sessionManager)
+    var sessionManager
 
     @ObservableState
     struct State: Equatable {
@@ -53,17 +51,17 @@ struct AppReducer {
             switch action {
             case .onAppear, .refreshSession:
                 state.destination = .launching
-                return .run { send in
+                return .run { @MainActor send in
                     do {
-                        let session = try await loadSessionState()
-                        await send(
+                        let session = try await sessionManager.bootstrap()
+                        send(
                             .sessionLoaded(
                                 didCompleteOnboarding: session.didCompleteOnboarding,
                                 isNewUser: session.isNewUser
                             )
                         )
                     } catch {
-                        await send(.sessionLoadFailed(errorMessage(for: error)))
+                        send(.sessionLoadFailed(errorMessage(for: error)))
                     }
                 }
 
@@ -128,26 +126,6 @@ struct AppReducer {
             }
         }
         .ifLet(\.$alert, action: \.alert)
-    }
-
-    // MARK: - Private Methods
-    private func loadSessionState() async throws -> (didCompleteOnboarding: Bool, isNewUser: Bool) {
-        if let user = authManager.auth {
-            print("User is authenticated: \(user.uId)")
-            let currentUser = try await userManager.establishUserSession(auth: user, isNewUser: false)
-            return (
-                didCompleteOnboarding: currentUser.didCompleteOnboarding == true,
-                isNewUser: false
-            )
-        } else {
-            let result = try await authManager.signInAnonymously()
-            print("Sign in anonymously: \(result.user.uId)")
-            let currentUser = try await userManager.establishUserSession(auth: result.user, isNewUser: result.isNewUser)
-            return (
-                didCompleteOnboarding: currentUser.didCompleteOnboarding == true,
-                isNewUser: result.isNewUser
-            )
-        }
     }
 
     private func authenticatedDestination(
