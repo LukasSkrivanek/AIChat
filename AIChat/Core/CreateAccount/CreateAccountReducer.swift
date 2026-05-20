@@ -25,7 +25,7 @@ struct CreateAccountReducer {
 
     enum Action {
         case signInAppleButtonTapped
-        case signInAppleSucceeded(isNewUser: Bool)
+        case signInAppleSucceeded(isNewUser: Bool, didCompleteOnboarding: Bool)
         case signInAppleFailed(String)
         case alert(PresentationAction<AlertAction>)
         case delegate(DelegateAction)
@@ -38,7 +38,7 @@ struct CreateAccountReducer {
 
     @CasePathable
     enum DelegateAction: Equatable {
-        case didSignIn(isNewUser: Bool)
+        case didSignIn(isNewUser: Bool, didCompleteOnboarding: Bool)
     }
 
     var body: some Reducer<State, Action> {
@@ -49,17 +49,32 @@ struct CreateAccountReducer {
                 return .run { send in
                     do {
                         let result = try await authManager.signInApple()
-                        try await userManager.logIn(auth: result.user, isNewUser: result.isNewUser)
-                        await send(.signInAppleSucceeded(isNewUser: result.isNewUser))
+                        let currentUser = try await userManager.logIn(
+                            auth: result.user,
+                            isNewUser: result.isNewUser
+                        )
+                        await send(
+                            .signInAppleSucceeded(
+                                isNewUser: result.isNewUser,
+                                didCompleteOnboarding: currentUser.didCompleteOnboarding == true
+                            )
+                        )
                     } catch {
                         await send(.signInAppleFailed(errorMessage(for: error)))
                     }
                 }
 
-            case .signInAppleSucceeded(let isNewUser):
+            case .signInAppleSucceeded(let isNewUser, let didCompleteOnboarding):
                 state.isLoading = false
                 return .run { send in
-                    await send(.delegate(.didSignIn(isNewUser: isNewUser)))
+                    await send(
+                        .delegate(
+                            .didSignIn(
+                                isNewUser: isNewUser,
+                                didCompleteOnboarding: didCompleteOnboarding
+                            )
+                        )
+                    )
                     await dismiss()
                 }
 

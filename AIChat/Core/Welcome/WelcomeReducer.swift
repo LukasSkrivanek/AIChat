@@ -24,7 +24,7 @@ struct WelcomeReducer {
 
     @CasePathable
     enum DelegateAction: Equatable {
-        case didSignIn(isNewUser: Bool)
+        case didSignIn(isNewUser: Bool, didCompleteOnboarding: Bool)
         case showOnboarding
     }
 
@@ -41,8 +41,15 @@ struct WelcomeReducer {
                 )
                 return .none
 
-            case .createAccount(.presented(.delegate(.didSignIn(let isNewUser)))):
-                return .send(.delegate(.didSignIn(isNewUser: isNewUser)))
+            case .createAccount(.presented(.delegate(.didSignIn(let isNewUser, let didCompleteOnboarding)))):
+                return .send(
+                    .delegate(
+                        .didSignIn(
+                            isNewUser: isNewUser,
+                            didCompleteOnboarding: didCompleteOnboarding
+                        )
+                    )
+                )
 
             case .createAccount, .delegate:
                 return .none

@@ -41,13 +41,15 @@ final class UserManager: ObservableObject {
         print("Loaded current user: \(currentUser?.userId)")
     }
     
-    func logIn(auth: UserAuthInfo, isNewUser: Bool) async throws {
+    func logIn(auth: UserAuthInfo, isNewUser: Bool) async throws -> UserModel {
         let creationVersion = isNewUser ? "1.0" : ""
         let user = UserModel(auth: auth, creationVersion: creationVersion)
         try await remoteService.saveUser(user: user)
-        currentUser = try await remoteService.fetchUser(userId: auth.uId) ?? user
+        let currentUser = try await remoteService.fetchUser(userId: auth.uId) ?? user
+        self.currentUser = currentUser
         saveCurrentUserLocally()
         addCurrentUserListener(userId: auth.uId)
+        return currentUser
     }
     
     func signOut() {
