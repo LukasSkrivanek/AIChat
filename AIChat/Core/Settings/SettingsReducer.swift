@@ -54,8 +54,10 @@ struct SettingsReducer {
         case signOutButtonTapped
         case deleteAccountButtonTapped
         case deleteAccountTimedOut
-        case signOutResult(Result<Void, any Error>)
-        case deleteAccountResult(Result<Void, any Error>)
+        case signOutSucceeded
+        case signOutFailed(String)
+        case deleteAccountSucceeded
+        case deleteAccountFailed(String)
         case delegate(DelegateAction)
         case createAccount(PresentationAction<CreateAccountReducer.Action>)
         case alert(PresentationAction<AlertAction>)
@@ -69,6 +71,7 @@ struct SettingsReducer {
 
     @CasePathable
     enum DelegateAction: Equatable {
+        case didFinishCreateAccount
         case didDeleteAccount
         case didSignOut
     }
@@ -81,21 +84,20 @@ struct SettingsReducer {
                 return .none
 
             case .signOutButtonTapped:
-                return .run { send in
-                    await send(
-                        .signOutResult(
-                            Result {
-                                try authManager.signOut()
-                                userManager.signOut()
-                            }
-                        )
-                    )
+                return .run { @MainActor send in
+                    do {
+                        try authManager.signOut()
+                        userManager.signOut()
+                        send(.signOutSucceeded)
+                    } catch {
+                        send(.signOutFailed(errorMessage(for: error)))
+                    }
                 }
 
-            case .signOutResult(.success):
+            case .signOutSucceeded:
                 return .send(.delegate(.didSignOut))
 
-            case .signOutResult(.failure(let error)):
+            case .signOutFailed(let message):
                 state.alert = AlertState(
                     title: { TextState("Could not sign out") },
                     actions: {
@@ -104,7 +106,7 @@ struct SettingsReducer {
                         }
                     },
                     message: {
-                        TextState(errorMessage(for: error))
+                        TextState(message)
                     }
                 )
                 return .none
@@ -128,15 +130,14 @@ struct SettingsReducer {
                 state.alert = nil
                 state.isDeletingAccount = true
                 return .merge(
-                    .run { send in
-                        await send(
-                            .deleteAccountResult(
-                                Result {
-                                    try await authManager.deleteAccount()
-                                    try await userManager.deleteCurrentUser()
-                                }
-                            )
-                        )
+                    .run { @MainActor send in
+                        do {
+                            try await userManager.deleteCurrentUser()
+                            try await authManager.deleteAccount()
+                            send(.deleteAccountSucceeded)
+                        } catch {
+                            send(.deleteAccountFailed(errorMessage(for: error)))
+                        }
                     }
                     .cancellable(id: CancelID.deleteAccount),
 
@@ -147,7 +148,7 @@ struct SettingsReducer {
                     .cancellable(id: CancelID.deleteAccountTimeout)
                 )
 
-            case .deleteAccountResult(.success):
+            case .deleteAccountSucceeded:
                 state.isDeletingAccount = false
                 return .merge(
                     .cancel(id: CancelID.deleteAccount),
@@ -155,7 +156,7 @@ struct SettingsReducer {
                     .send(.delegate(.didDeleteAccount))
                 )
 
-            case .deleteAccountResult(.failure(let error)):
+            case .deleteAccountFailed(let message):
                 state.isDeletingAccount = false
                 state.alert = AlertState(
                     title: { TextState("Could not delete account") },
@@ -165,7 +166,7 @@ struct SettingsReducer {
                         }
                     },
                     message: {
-                        TextState(errorMessage(for: error))
+                        TextState(message)
                     }
                 )
                 return .merge(
@@ -195,8 +196,10 @@ struct SettingsReducer {
                 state.alert = nil
                 return .none
 
+            case .createAccount(.presented(.delegate(.didSignIn))):
+                return .send(.delegate(.didFinishCreateAccount))
+
             case .createAccount(.dismiss):
-                state.isAnonymousUser = authManager.auth?.isAnonymous == true
                 return .none
 
             case .alert(.dismiss):
