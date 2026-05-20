@@ -134,7 +134,7 @@ struct AppReducer {
     private func loadSessionState() async throws -> (didCompleteOnboarding: Bool, isNewUser: Bool) {
         if let user = authManager.auth {
             print("User is authenticated: \(user.uId)")
-            let currentUser = try await userManager.logIn(auth: user, isNewUser: false)
+            let currentUser = try await userManager.establishUserSession(auth: user, isNewUser: false)
             return (
                 didCompleteOnboarding: currentUser.didCompleteOnboarding == true,
                 isNewUser: false
@@ -142,7 +142,7 @@ struct AppReducer {
         } else {
             let result = try await authManager.signInAnonymously()
             print("Sign in anonymously: \(result.user.uId)")
-            let currentUser = try await userManager.logIn(auth: result.user, isNewUser: result.isNewUser)
+            let currentUser = try await userManager.establishUserSession(auth: result.user, isNewUser: result.isNewUser)
             return (
                 didCompleteOnboarding: currentUser.didCompleteOnboarding == true,
                 isNewUser: result.isNewUser

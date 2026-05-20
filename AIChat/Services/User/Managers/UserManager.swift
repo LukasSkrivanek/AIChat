@@ -41,7 +41,7 @@ final class UserManager: ObservableObject {
         print("Loaded current user: \(currentUser?.userId)")
     }
     
-    func logIn(auth: UserAuthInfo, isNewUser: Bool) async throws -> UserModel {
+    func establishUserSession(auth: UserAuthInfo, isNewUser: Bool) async throws -> UserModel {
         let creationVersion = isNewUser ? "1.0" : ""
         let user = UserModel(auth: auth, creationVersion: creationVersion)
         try await remoteService.saveUser(user: user)

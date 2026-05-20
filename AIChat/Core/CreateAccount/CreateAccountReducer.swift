@@ -49,7 +49,7 @@ struct CreateAccountReducer {
                 return .run { send in
                     do {
                         let result = try await authManager.signInApple()
-                        let currentUser = try await userManager.logIn(
+                        let currentUser = try await userManager.establishUserSession(
                             auth: result.user,
                             isNewUser: result.isNewUser
                         )
