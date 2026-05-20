@@ -32,14 +32,14 @@ struct SettingsReducer {
         @Presents
         var createAccount: CreateAccountReducer.State?
         @Presents
-        var alert: AlertState<Action.Alert>?
+        var alert: AlertState<AlertAction>?
 
         init(
             isDeletingAccount: Bool = false,
             isPremium: Bool = true,
             isAnonymousUser: Bool = false,
             createAccount: CreateAccountReducer.State? = nil,
-            alert: AlertState<Action.Alert>? = nil
+            alert: AlertState<AlertAction>? = nil
         ) {
             self.isDeletingAccount = isDeletingAccount
             self.isPremium = isPremium
@@ -56,21 +56,21 @@ struct SettingsReducer {
         case deleteAccountTimedOut
         case signOutResult(Result<Void, any Error>)
         case deleteAccountResult(Result<Void, any Error>)
-        case delegate(Delegate)
+        case delegate(DelegateAction)
         case createAccount(PresentationAction<CreateAccountReducer.Action>)
-        case alert(PresentationAction<Alert>)
+        case alert(PresentationAction<AlertAction>)
+    }
 
-        @CasePathable
-        enum Alert: Equatable {
-            case deleteAccountConfirmed
-            case errorDismissed
-        }
+    @CasePathable
+    enum AlertAction: Equatable {
+        case deleteAccountConfirmed
+        case errorDismissed
+    }
 
-        @CasePathable
-        enum Delegate: Equatable {
-            case didDeleteAccount
-            case didSignOut
-        }
+    @CasePathable
+    enum DelegateAction: Equatable {
+        case didDeleteAccount
+        case didSignOut
     }
 
     var body: some Reducer<State, Action> {

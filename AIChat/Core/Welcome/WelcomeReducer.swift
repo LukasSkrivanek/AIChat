@@ -16,16 +16,16 @@ struct WelcomeReducer {
     }
 
     enum Action {
-        case delegate(Delegate)
+        case delegate(DelegateAction)
         case getStartedButtonTapped
         case signInButtonTapped
         case createAccount(PresentationAction<CreateAccountReducer.Action>)
+    }
 
-        @CasePathable
-        enum Delegate: Equatable {
-            case didSignIn(isNewUser: Bool)
-            case showOnboarding
-        }
+    @CasePathable
+    enum DelegateAction: Equatable {
+        case didSignIn(isNewUser: Bool)
+        case showOnboarding
     }
 
     var body: some Reducer<State, Action> {

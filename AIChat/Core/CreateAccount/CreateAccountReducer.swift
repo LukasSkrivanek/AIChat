@@ -20,25 +20,25 @@ struct CreateAccountReducer {
         var title: String = "Create Account"
         var subtitle: String = "Don't lose your data! Connect to an SSO provider to save your account."
         var isLoading = false
-        @Presents var alert: AlertState<Action.Alert>?
+        @Presents var alert: AlertState<AlertAction>?
     }
 
     enum Action {
         case signInAppleButtonTapped
         case signInAppleSucceeded(isNewUser: Bool)
         case signInAppleFailed(String)
-        case alert(PresentationAction<Alert>)
-        case delegate(Delegate)
+        case alert(PresentationAction<AlertAction>)
+        case delegate(DelegateAction)
+    }
 
-        @CasePathable
-        enum Alert: Equatable {
-            case dismiss
-        }
+    @CasePathable
+    enum AlertAction: Equatable {
+        case dismiss
+    }
 
-        @CasePathable
-        enum Delegate: Equatable {
-            case didSignIn(isNewUser: Bool)
-        }
+    @CasePathable
+    enum DelegateAction: Equatable {
+        case didSignIn(isNewUser: Bool)
     }
 
     var body: some Reducer<State, Action> {

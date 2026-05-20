@@ -20,8 +20,8 @@ struct ChatReducer {
         var currentUser: UserModel? = .mock
         var avatar: AvatarModel? = .mock
         var avatarId: String = AvatarModel.mock.avatarId
-        @Presents var alert: AlertState<Action.Alert>?
-        @Presents var confirmationDialog: ConfirmationDialogState<Action.ConfirmationDialog>?
+        @Presents var alert: AlertState<AlertAction>?
+        @Presents var confirmationDialog: ConfirmationDialogState<ConfirmationDialogAction>?
     }
     
     enum Action: BindableAction {
@@ -32,20 +32,20 @@ struct ChatReducer {
         case onSendMessageTapped
         case toggleProfileModal
         case binding(BindingAction<State>)
-        case alert(PresentationAction<Alert>)
-        case confirmationDialog(PresentationAction<ConfirmationDialog>)
+        case alert(PresentationAction<AlertAction>)
+        case confirmationDialog(PresentationAction<ConfirmationDialogAction>)
+    }
 
-        @CasePathable
-        enum Alert: Equatable {
-            case alertCancelTapped
-            case alertConfirmTapped
-        }
+    @CasePathable
+    enum AlertAction: Equatable {
+        case alertCancelTapped
+        case alertConfirmTapped
+    }
 
-        @CasePathable
-        enum ConfirmationDialog: Equatable {
-            case confirmationDialogCancelTapped
-            case confirmationDialogConfirmTapped
-        }
+    @CasePathable
+    enum ConfirmationDialogAction: Equatable {
+        case confirmationDialogCancelTapped
+        case confirmationDialogConfirmTapped
     }
 
     @Dependency(\.uuid) var uuid

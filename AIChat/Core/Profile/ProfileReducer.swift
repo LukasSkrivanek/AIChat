@@ -39,15 +39,15 @@ struct ProfileReducer {
         case createAvatarDismissed
         case avatarTapped(AvatarModel)
         case deleteAvatar(IndexSet)
-        case delegate(Delegate)
+        case delegate(DelegateAction)
         case path(StackActionOf<Path>)
         case settings(PresentationAction<SettingsReducer.Action>)
+    }
 
-        @CasePathable
-        enum Delegate: Equatable {
-            case didDeleteAccount
-            case didSignOut
-        }
+    @CasePathable
+    enum DelegateAction: Equatable {
+        case didDeleteAccount
+        case didSignOut
     }
 
     var body: some Reducer<State, Action> {

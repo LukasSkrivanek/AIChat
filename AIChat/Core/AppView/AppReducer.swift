@@ -27,7 +27,7 @@ struct AppReducer {
     @ObservableState
     struct State: Equatable {
         var destination: Destination.State = .launching
-        @Presents var alert: AlertState<Action.Alert>?
+        @Presents var alert: AlertState<AlertAction>?
     }
 
     enum Action {
@@ -36,13 +36,13 @@ struct AppReducer {
         case refreshSession
         case userStatusCheckSucceeded
         case userStatusCheckFailed(String)
-        case alert(PresentationAction<Alert>)
+        case alert(PresentationAction<AlertAction>)
+    }
 
-        @CasePathable
-        enum Alert: Equatable {
-            case retryTapped
-            case dismissTapped
-        }
+    @CasePathable
+    enum AlertAction: Equatable {
+        case retryTapped
+        case dismissTapped
     }
 
     var body: some Reducer<State, Action> {
