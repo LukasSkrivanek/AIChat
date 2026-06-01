@@ -27,13 +27,8 @@ struct ProfileView: View {
             .sheet(item: $store.scope(state: \.settings, action: \.settings)) { settingsStore in
                 SettingsView(store: settingsStore)
             }
-            .fullScreenCover(
-                isPresented: Binding(
-                    get: { store.showCreateAvatar },
-                    set: { if !$0 { store.send(.createAvatarDismissed) } }
-                )
-            ) {
-                CreateAvatar()
+            .fullScreenCover(item: $store.scope(state: \.createAvatar, action: \.createAvatar)) { createAvatarStore in
+                CreateAvatarView(store: createAvatarStore)
             }
             .task {
                 store.send(.task)
