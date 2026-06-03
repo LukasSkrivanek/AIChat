@@ -4,15 +4,17 @@
 //
 //  Created by macbook on 16.01.2025.
 //
+import AIChatDomain
 import FirebaseAuth
 
 extension UserAuthInfo {
     init(user: User) {
-        self.uId = user.uid
-        self.email = user.email
-        self.isAnonymous = user.isAnonymous
-        self.creationDate = user.metadata.creationDate
-        self.lastSignInDate = user.metadata.lastSignInDate
+        self.init(
+            uid: user.uid,
+            email: user.email,
+            isAnonymous: user.isAnonymous,
+            creationDate: user.metadata.creationDate,
+            lastSignInDate: user.metadata.lastSignInDate
+        )
     }
-    
 }

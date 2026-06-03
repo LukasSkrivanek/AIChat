@@ -5,6 +5,7 @@
 //  Created by macbook on 08.01.2025.
 //
 
+import AIChatCommon
 import SwiftUI
 
 struct ProfileModalView: View {

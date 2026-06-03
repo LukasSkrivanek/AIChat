@@ -5,6 +5,7 @@
 //  Created by Skrivanek, Lukas on 16.05.2026.
 //
 
+import AIChatDomain
 import ComposableArchitecture
 import Foundation
 import SwiftUI
@@ -57,8 +58,8 @@ struct OnboardingReducer {
 
     @Dependency(\.continuousClock)
     var clock
-    @Dependency(\.userManager)
-    var userManager
+    @Dependency(\.userSessionClient)
+    var userSessionClient
 
     @ObservableState
     struct State: Equatable {
@@ -122,8 +123,8 @@ struct OnboardingReducer {
                 state.isCompletingProfileSetup = true
                 return .run { send in
                     do {
-                        try await userManager.makeOnboardingCompletedCurrentUser(
-                            profileColorHex: selectedColor.color.asHex()
+                        try await userSessionClient.makeOnboardingCompletedCurrentUser(
+                            selectedColor.color.asHex()
                         )
                         await send(.finishProfileSetupCompleted)
                     } catch {

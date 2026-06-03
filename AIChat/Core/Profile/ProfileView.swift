@@ -24,10 +24,10 @@ struct ProfileView: View {
                     settingsButton
                 }
             }
-            .sheet(item: $store.scope(state: \.settings, action: \.settings)) { settingsStore in
+            .sheet(item: $store.scope(state: \.destination?.settings, action: \.destination.settings)) { settingsStore in
                 SettingsView(store: settingsStore)
             }
-            .fullScreenCover(item: $store.scope(state: \.createAvatar, action: \.createAvatar)) { createAvatarStore in
+            .fullScreenCover(item: $store.scope(state: \.destination?.createAvatar, action: \.destination.createAvatar)) { createAvatarStore in
                 CreateAvatarView(store: createAvatarStore)
             }
             .task {

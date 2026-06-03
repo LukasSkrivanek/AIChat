@@ -6,6 +6,7 @@
 //
 
 import SwiftUI
+import AIChatDomain
 
 struct ChatBubbleViewBuilder: View {
     var message: ChatMessageModel = .mock

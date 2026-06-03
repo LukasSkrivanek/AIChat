@@ -4,11 +4,12 @@
 //
 //  Created by macbook on 16.01.2025.
 //
+import AIChatDomain
 import FirebaseAuth
 import SwiftUI
 import SignInAppleAsync
 
-struct FirebaseAuthService: AuthService {
+struct FirebaseAuthService {
     
     func getAuthenticatedUser() -> UserAuthInfo? {
         if let user = Auth.auth().currentUser {

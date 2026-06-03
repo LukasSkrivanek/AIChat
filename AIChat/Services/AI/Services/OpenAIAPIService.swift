@@ -5,12 +5,10 @@
 //  Created by Skrivanek, Lukas on 25.05.2026.
 //
 
-import OpenAI
 import UIKit
 import FirebaseFunctions
 
-struct OpenAIAPIService: AIService {
-
+struct OpenAIAPIService {
     func generateImage(input: String) async throws -> UIImage {
         
         let response = try await Functions.functions().httpsCallable("generateOpenAIImage").call([

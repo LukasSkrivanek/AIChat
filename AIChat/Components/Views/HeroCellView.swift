@@ -5,6 +5,7 @@
 //  Created by macbook on 19.12.2024.
 //
 
+import AIChatCommon
 import SwiftUI
 
 struct HeroCellView: View {

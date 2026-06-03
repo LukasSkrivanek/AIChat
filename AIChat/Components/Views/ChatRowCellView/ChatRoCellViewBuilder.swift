@@ -5,6 +5,7 @@
 //  Created by macbook on 31.12.2024.
 //
 
+import AIChatDomain
 import SwiftUI
 
 struct ChatRoCellViewBuilder: View {

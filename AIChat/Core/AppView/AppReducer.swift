@@ -5,8 +5,9 @@
 //  Created by Skrivanek, Lukas on 17.03.2026.
 //
 
-import Foundation
+import AIChatDomain
 import ComposableArchitecture
+import Foundation
 
 @Reducer
 struct AppReducer {
@@ -19,8 +20,8 @@ struct AppReducer {
         case welcome(WelcomeReducer)
     }
 
-    @Dependency(\.sessionManager)
-    var sessionManager
+    @Dependency(\.sessionClient)
+    var sessionClient
 
     @ObservableState
     struct State: Equatable {
@@ -51,17 +52,17 @@ struct AppReducer {
             switch action {
             case .onAppear, .refreshSession:
                 state.destination = .launching
-                return .run { @MainActor send in
+                return .run { send in
                     do {
-                        let session = try await sessionManager.bootstrap()
-                        send(
+                        let session = try await sessionClient.bootstrap()
+                        await send(
                             .sessionLoaded(
                                 didCompleteOnboarding: session.didCompleteOnboarding,
                                 isNewUser: session.isNewUser
                             )
                         )
                     } catch {
-                        send(.sessionLoadFailed(errorMessage(for: error)))
+                        await send(.sessionLoadFailed(errorMessage(for: error)))
                     }
                 }
 

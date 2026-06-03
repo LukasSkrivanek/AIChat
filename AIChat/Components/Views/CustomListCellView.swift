@@ -4,6 +4,7 @@
 //
 //  Created by macbook on 23.12.2024.
 //
+import AIChatCommon
 import SwiftUI
 
 struct CustomListCellView: View {

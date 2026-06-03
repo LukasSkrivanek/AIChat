@@ -5,6 +5,8 @@
 //  Created by macbook on 13.01.2025.
 //
 
+import AIChatCommon
+import AIChatDomain
 import SwiftUI
 
 struct CategoryListView: View {

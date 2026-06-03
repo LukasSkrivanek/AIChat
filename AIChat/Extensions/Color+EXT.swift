@@ -5,6 +5,7 @@
 //  Created by macbook on 31.12.2024.
 //
 
+import AIChatDomain
 import SwiftUI
 public extension Color {
 
@@ -56,5 +57,14 @@ public extension Color {
                           lroundf(Float(green) * 255),
                           lroundf(Float(blue) * 255))
         }
+    }
+}
+
+extension UserModel {
+    var profileColorCalculated: Color {
+        guard let profileColorHex else {
+            return .accent
+        }
+        return Color(hex: profileColorHex)
     }
 }

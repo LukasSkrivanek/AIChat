@@ -5,14 +5,15 @@
 //  Created by macbook on 07.01.2025.
 //
 
+import AIChatDomain
 import ComposableArchitecture
 import SwiftUI
 
 @Reducer
 struct CreateAvatarReducer {
 
-    @Dependency(\.aiManager)
-    var aiManager
+    @Dependency(\.aiClient)
+    var aiClient
     @Dependency(\.continuousClock)
     var clock
     @Dependency(\.dismiss)
@@ -74,7 +75,7 @@ struct CreateAvatarReducer {
                 .characterDescription
                 return .run { send in
                     do {
-                        let image = try await aiManager.generateImage(input: input)
+                        let image = try await aiClient.generateImage(input)
                         await send(.generateFinished(.success(image)))
                     } catch {
                         await send(.generateFinished(.failure(ImageGenerationError(message: error.localizedDescription))))
@@ -261,7 +262,7 @@ struct CreateAvatarView: View {
         store: Store(initialState: state) {
             CreateAvatarReducer()
         } withDependencies: {
-            $0.aiManager = AIManager(service: MockAIService())
+            $0.aiClient = .mock()
         }
     )
 }

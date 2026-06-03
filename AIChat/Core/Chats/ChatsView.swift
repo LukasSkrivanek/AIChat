@@ -5,6 +5,7 @@
 //  Created by macbook on 18.12.2024.
 //
 
+import AIChatDomain
 import SwiftUI
 
 struct ChatsView: View {

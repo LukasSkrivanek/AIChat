@@ -5,6 +5,7 @@
 //  Created by Skrivanek, Lukas on 15.05.2026.
 //
 
+import AIChatDomain
 import ComposableArchitecture
 import Foundation
 
@@ -18,10 +19,10 @@ struct SettingsReducer {
 
     @Dependency(\.continuousClock)
     var clock
-    @Dependency(\.authManager)
-    var authManager
-    @Dependency(\.userManager)
-    var userManager
+    @Dependency(\.authClient)
+    var authClient
+    @Dependency(\.userSessionClient)
+    var userSessionClient
 
     @ObservableState
     struct State: Equatable {
@@ -84,13 +85,13 @@ struct SettingsReducer {
                 return .none
 
             case .signOutButtonTapped:
-                return .run { @MainActor send in
+                return .run { send in
                     do {
-                        try authManager.signOut()
-                        userManager.signOut()
-                        send(.signOutSucceeded)
+                        try authClient.signOut()
+                        await userSessionClient.signOut()
+                        await send(.signOutSucceeded)
                     } catch {
-                        send(.signOutFailed(errorMessage(for: error)))
+                        await send(.signOutFailed(errorMessage(for: error)))
                     }
                 }
 
@@ -130,13 +131,13 @@ struct SettingsReducer {
                 state.alert = nil
                 state.isDeletingAccount = true
                 return .merge(
-                    .run { @MainActor send in
+                    .run { send in
                         do {
-                            try await userManager.deleteCurrentUser()
-                            try await authManager.deleteAccount()
-                            send(.deleteAccountSucceeded)
+                            try await userSessionClient.deleteCurrentUser()
+                            try await authClient.deleteAccount()
+                            await send(.deleteAccountSucceeded)
                         } catch {
-                            send(.deleteAccountFailed(errorMessage(for: error)))
+                            await send(.deleteAccountFailed(errorMessage(for: error)))
                         }
                     }
                     .cancellable(id: CancelID.deleteAccount),
@@ -212,6 +213,7 @@ struct SettingsReducer {
                 return .none
             }
         }
+        .ifLet(\.$alert, action: \.alert)
         .ifLet(\.$createAccount, action: \.createAccount) {
             CreateAccountReducer()
         }

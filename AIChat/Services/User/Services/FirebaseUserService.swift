@@ -2,19 +2,20 @@
 //  FirebaseUserService.swift
 //  AIChat
 //
-//  Created by Codex on 18.05.2026.
+//  Created by Lukas Skrivanek on 18.05.2026.
 //
 
+import AIChatDomain
 import Foundation
 import FirebaseFirestore
 import SwiftfulFirestore
 
-struct FirebaseUserService: RemoteUserService {
+struct FirebaseUserService {
     var collection: CollectionReference {
         Firestore.firestore().collection("users")
     }
 
-    func saveUser(user: UserModel) async throws {
+    func saveUser(_ user: UserModel) async throws {
         print("SAVE USER START:", user.userId)
         do {
             try collection.document(user.userId).setData(from: user, merge: true)

@@ -5,6 +5,7 @@
 //  Created by macbook on 07.01.2025.
 //
 
+import AIChatDomain
 import ComposableArchitecture
 import SwiftUI
 

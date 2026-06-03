@@ -5,6 +5,7 @@
 //  Created by Skrivanek, Lukas on 15.05.2026.
 //
 
+import AIChatDomain
 import ComposableArchitecture
 import Foundation
 
@@ -15,18 +16,25 @@ struct ProfileReducer {
     enum Path {
         case chat(ChatReducer)
     }
+    
+    @Reducer
+    enum Destination {
+        case createAvatar(CreateAvatarReducer)
+        case settings(SettingsReducer)
+    }
 
-    @Dependency(\.userManager)
-    var userManager
+    @Dependency(\.userSessionClient)
+    var userSessionClient
 
     @ObservableState
     struct State: Equatable {
         var currentUser: UserModel? = .mock
-        @Presents var createAvatar: CreateAvatarReducer.State?
         var isLoading: Bool = true
         var myAvatars: [AvatarModel] = []
+        
         var path = StackState<Path.State>()
-        @Presents var settings: SettingsReducer.State?
+
+        @Presents var destination: Destination.State?
 
         var isAnonymousUser: Bool {
             currentUser?.isAnonymous == true
@@ -35,7 +43,6 @@ struct ProfileReducer {
     
     enum Action {
         case currentUserLoaded(UserModel?)
-        case createAvatar(PresentationAction<CreateAvatarReducer.Action>)
         case task
         case loadDataResult([AvatarModel])
         case settingsButtonTapped
@@ -44,7 +51,7 @@ struct ProfileReducer {
         case deleteAvatar(IndexSet)
         case delegate(DelegateAction)
         case path(StackActionOf<Path>)
-        case settings(PresentationAction<SettingsReducer.Action>)
+        case destination(PresentationAction<Destination.Action>)
     }
 
     @CasePathable
@@ -59,8 +66,9 @@ struct ProfileReducer {
             case .task:
                 state.isLoading = true
                 return .merge(
-                    .run { @MainActor send in
-                        send(.currentUserLoaded(userManager.currentUser))
+                    .run { send in
+                        let currentUser = await userSessionClient.currentUser()
+                        await send(.currentUserLoaded(currentUser))
                     },
                     .run { send in
                         await send(.loadDataResult(AvatarModel.mocks))
@@ -69,7 +77,10 @@ struct ProfileReducer {
 
             case .currentUserLoaded(let currentUser):
                 state.currentUser = currentUser
-                state.settings?.isAnonymousUser = currentUser?.isAnonymous == true
+                if case var .settings(settingsState) = state.destination {
+                    settingsState.isAnonymousUser = currentUser?.isAnonymous == true
+                    state.destination = .settings(settingsState)
+                }
                 return .none
 
             case .loadDataResult(let avatars):
@@ -78,26 +89,27 @@ struct ProfileReducer {
                 return .none
 
             case .settingsButtonTapped:
-                state.settings = SettingsReducer.State(
+                state.destination = .settings(SettingsReducer.State(
                     isAnonymousUser: state.isAnonymousUser
-                )
+                ))
                 return .none
 
-            case .settings(.presented(.delegate(.didFinishCreateAccount))):
-                return .run { @MainActor send in
-                    send(.currentUserLoaded(userManager.currentUser))
+            case .destination(.presented(.settings(.delegate(.didFinishCreateAccount)))):
+                return .run { send in
+                    let currentUser = await userSessionClient.currentUser()
+                    await send(.currentUserLoaded(currentUser))
                 }
 
-            case .settings(.presented(.delegate(.didDeleteAccount))):
-                state.settings = nil
+            case .destination(.presented(.settings(.delegate(.didDeleteAccount)))):
+                state.destination = nil
                 return .send(.delegate(.didDeleteAccount))
 
-            case .settings(.presented(.delegate(.didSignOut))):
-                state.settings = nil
+            case .destination(.presented(.settings(.delegate(.didSignOut)))):
+                state.destination = nil
                 return .send(.delegate(.didSignOut))
 
             case .newAvatarButtonTapped:
-                state.createAvatar = CreateAvatarReducer.State()
+                state.destination = .createAvatar( CreateAvatarReducer.State())
                 return .none
 
             case .avatarTapped(let avatar):
@@ -117,18 +129,14 @@ struct ProfileReducer {
                 state.myAvatars.remove(at: index)
                 return .none
 
-            case .createAvatar, .delegate, .settings, .path:
+            case .delegate, .destination, .path:
                 return .none
             }
         }
         .forEach(\.path, action: \.path)
-        .ifLet(\.$createAvatar, action: \.createAvatar) {
-            CreateAvatarReducer()
-        }
-        .ifLet(\.$settings, action: \.settings) {
-            SettingsReducer()
-        }
+        .ifLet(\.$destination, action: \.destination)
     }
 }
 
 extension ProfileReducer.Path.State: Equatable {}
+extension ProfileReducer.Destination.State: Equatable {}

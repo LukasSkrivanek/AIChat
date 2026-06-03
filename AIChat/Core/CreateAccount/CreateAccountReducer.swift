@@ -5,14 +5,15 @@
 //  Created by Skrivanek, Lukas on 21.03.2026.
 //
 
+import AIChatDomain
 import ComposableArchitecture
 import Foundation
 
 @Reducer
 struct CreateAccountReducer {
 
-    @Dependency(\.authManager) var authManager
-    @Dependency(\.userManager) var userManager
+    @Dependency(\.authClient) var authClient
+    @Dependency(\.userSessionClient) var userSessionClient
     @Dependency(\.dismiss) var dismiss
 
     @ObservableState
@@ -48,10 +49,10 @@ struct CreateAccountReducer {
                 state.isLoading = true
                 return .run { send in
                     do {
-                        let result = try await authManager.signInApple()
-                        let currentUser = try await userManager.establishUserSession(
-                            auth: result.user,
-                            isNewUser: result.isNewUser
+                        let result = try await authClient.signInApple()
+                        let currentUser = try await userSessionClient.establishUserSession(
+                            result.user,
+                            result.isNewUser
                         )
                         await send(
                             .signInAppleSucceeded(

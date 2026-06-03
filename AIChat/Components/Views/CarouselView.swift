@@ -4,6 +4,7 @@
 //
 //  Created by macbook on 19.12.2024.
 //
+import AIChatDomain
 import SwiftUI
 
 struct CarouselView<Item: Hashable, Content: View>: View {

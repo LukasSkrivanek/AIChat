@@ -5,6 +5,8 @@
 //  Created by Skrivanek, Lukas on 20.12.2025.
 //
 
+import AIChatCommon
+import AIChatDomain
 import ComposableArchitecture
 import SwiftUI
 
