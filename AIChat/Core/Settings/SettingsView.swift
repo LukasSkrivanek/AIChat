@@ -27,7 +27,7 @@ struct SettingsView: View {
                     .presentationDetents([.medium])
             }
         }
-        .alert(store: store.scope(state: \.$alert, action: \.alert))
+        .alert($store.scope(state: \.alert, action: \.alert))
         .overlay {
             if store.isDeletingAccount {
                 ZStack {

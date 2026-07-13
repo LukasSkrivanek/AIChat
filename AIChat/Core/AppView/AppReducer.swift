@@ -11,7 +11,7 @@ import ComposableArchitecture
 @Reducer
 struct AppReducer {
 
-    @Reducer(state: .equatable)
+    @Reducer
     enum Destination {
         case launching
         case onboarding(OnboardingReducer)
@@ -33,6 +33,7 @@ struct AppReducer {
     enum Action {
         case destination(Destination.Action)
         case onAppear
+        case refreshSession
         case userStatusCheckSucceeded
         case userStatusCheckFailed(String)
         case alert(PresentationAction<Alert>)
@@ -50,7 +51,7 @@ struct AppReducer {
         }
         Reduce { state, action in
             switch action {
-            case .onAppear:
+            case .onAppear, .refreshSession:
                 state.destination = .launching
                 return .run { send in
                     do {
@@ -65,7 +66,7 @@ struct AppReducer {
                 state.alert = nil
                 state.destination = hasCompletedOnboarding()
                     ? .tabBar(TabBarReducer.State())
-                    : .welcome(WelcomeReducer.State())
+                    : .onboarding(OnboardingReducer.State())
                 return .none
 
             case .userStatusCheckFailed(let errorMessage):
@@ -88,15 +89,7 @@ struct AppReducer {
 
             case .alert(.presented(.retryTapped)):
                 state.alert = nil
-                state.destination = .launching
-                return .run { send in
-                    do {
-                        try await checkUserStatus()
-                        await send(.userStatusCheckSucceeded)
-                    } catch {
-                        await send(.userStatusCheckFailed(errorMessage(for: error)))
-                    }
-                }
+                return .send(.refreshSession)
 
             case .alert(.presented(.dismissTapped)):
                 state.alert = nil
@@ -110,38 +103,16 @@ struct AppReducer {
                 return .none
 
             case .destination(.welcome(.delegate(.didSignIn(let isNewUser)))):
-                if isNewUser || !hasCompletedOnboarding() {
-                    state.destination = .onboarding(OnboardingReducer.State())
-                } else {
-                    state.destination = .tabBar(TabBarReducer.State())
-                }
+                state.destination = authenticatedDestination(isNewUser: isNewUser)
                 return .none
 
             case .destination(.onboarding(.delegate(.didFinish))):
                 state.destination = .tabBar(TabBarReducer.State())
                 return .none
 
-            case .destination(.tabBar(.profile(.delegate(.didSignOut)))):
-                state.destination = .launching
-                return .run { send in
-                    do {
-                        try await checkUserStatus()
-                        await send(.userStatusCheckSucceeded)
-                    } catch {
-                        await send(.userStatusCheckFailed(errorMessage(for: error)))
-                    }
-                }
-
-            case .destination(.tabBar(.profile(.delegate(.didDeleteAccount)))):
-                state.destination = .launching
-                return .run { send in
-                    do {
-                        try await checkUserStatus()
-                        await send(.userStatusCheckSucceeded)
-                    } catch {
-                        await send(.userStatusCheckFailed(errorMessage(for: error)))
-                    }
-                }
+            case .destination(.tabBar(.profile(.delegate(.didSignOut)))),
+                 .destination(.tabBar(.profile(.delegate(.didDeleteAccount)))):
+                return .send(.refreshSession)
 
             case .destination:
                 return .none
@@ -165,6 +136,14 @@ struct AppReducer {
     private func hasCompletedOnboarding() -> Bool {
         userManager.currentUser?.didCompleteOnboarding == true
     }
+
+    private func authenticatedDestination(isNewUser: Bool = false) -> Destination.State {
+        if isNewUser || !hasCompletedOnboarding() {
+            return .onboarding(OnboardingReducer.State())
+        } else {
+            return .tabBar(TabBarReducer.State())
+        }
+    }
 }
 
 extension AppReducer {
@@ -179,3 +158,5 @@ extension AppReducer {
         }
     }
 }
+
+extension AppReducer.Destination.State: Equatable, Sendable {}
