@@ -6,42 +6,41 @@
 //
 
 import SwiftUI
+import ComposableArchitecture
 
 struct CategoryListView: View {
-    var category: CharacterOption = .alien
-    var imageName: String = Constants.randomImage
-    @State private var avatars: [AvatarModel] = AvatarModel.mocks
-    @Binding var path: [NavigationPathOption]
+    let store: StoreOf<CategoryListReducer>
+
     var body: some View {
         List {
             CategoryCellView(
-                title: category.plural.capitalized,
-                imageName: imageName,
+                title: store.category.plural.capitalized,
+                imageName: store.imageName,
                 font: .largeTitle,
                 cornerRadius: 0
             )
             .removeListRowFormatting()
             
-            ForEach(avatars, id: \.self) { avatar in
+            ForEach(store.avatars, id: \.self) { avatar in
                 CustomListCellView(
                     imageName: avatar.profileImageName,
                     title: avatar.name,
                     subtitle: avatar.characterDescription
                 )
                 .anyButton(.highlight) {
-                    onAvatarPress(avatar: avatar)
+                    store.send(.avatarTapped(avatar))
                 }
             }
         }
         .ignoresSafeArea()
         .listStyle(.plain)
     }
-    
-    private func onAvatarPress(avatar: AvatarModel) {
-        path.append(.chat(avatarId: avatar.avatarId))
-    }
 }
 
 #Preview {
-    CategoryListView(path: .constant([]))
+    CategoryListView(
+        store: Store(initialState: CategoryListReducer.State()) {
+            CategoryListReducer()
+        }
+    )
 }
