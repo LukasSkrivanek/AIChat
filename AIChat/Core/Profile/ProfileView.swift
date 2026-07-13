@@ -11,6 +11,7 @@ import ComposableArchitecture
 struct ProfileView: View {
 
     @Bindable var store: StoreOf<ProfileReducer>
+    var loadsOnTask: Bool = true
 
     var body: some View {
         NavigationStack(path: $store.scope(state: \.path, action: \.path)) {
@@ -31,6 +32,10 @@ struct ProfileView: View {
                 CreateAvatarView(store: createAvatarStore)
             }
             .task {
+                guard loadsOnTask else {
+                    return
+                }
+
                 store.send(.task)
             }
         } destination: { store in

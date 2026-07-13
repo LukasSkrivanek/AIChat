@@ -45,46 +45,48 @@ struct AvatarModel: Hashable, Equatable {
         mocks[0]
     }
     static var mocks: [AvatarModel] {
-        [
+        let baseDate = Date(timeIntervalSinceReferenceDate: 1_234_567_890)
+
+        return [
             AvatarModel(
-                        avatarId: UUID().uuidString,
+                        avatarId: "mock-avatar-1",
                         name: "Alpha",
                         characterOption: .man,
                         characterAction: .smiling,
                         characterLocation: .home,
                         profileImageName: Constants.randomImage,
-                        authorID: UUID().uuidString,
-                        dateCreated: Date()
+                        authorID: "mock-author-1",
+                        dateCreated: baseDate
                     ),
                     AvatarModel(
-                        avatarId: UUID().uuidString,
+                        avatarId: "mock-avatar-2",
                         name: "Beta",
                         characterOption: .woman,
                         characterAction: .studying,
                         characterLocation: .school,
                         profileImageName: Constants.randomImage,
-                        authorID: UUID().uuidString,
-                        dateCreated: Date()
+                        authorID: "mock-author-2",
+                        dateCreated: baseDate.addingTimeInterval(hours: -1)
                     ),
                     AvatarModel(
-                        avatarId: UUID().uuidString,
+                        avatarId: "mock-avatar-3",
                         name: "Gamma",
                         characterOption: .alien,
                         characterAction: .fighting,
                         characterLocation: .space,
                         profileImageName: Constants.randomImage,
-                        authorID: UUID().uuidString,
-                        dateCreated: Date()
+                        authorID: "mock-author-3",
+                        dateCreated: baseDate.addingTimeInterval(hours: -2)
                     ),
             AvatarModel(
-                avatarId: UUID().uuidString,
+                avatarId: "mock-avatar-4",
                 name: "Delta",
                 characterOption: .cat,
                 characterAction: .relaxing,
                 characterLocation: .park,
                 profileImageName: Constants.randomImage,
-                authorID: UUID().uuidString,
-                dateCreated: Date()
+                authorID: "mock-author-4",
+                dateCreated: baseDate.addingTimeInterval(hours: -3)
             )
         ]
     }
