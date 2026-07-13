@@ -83,18 +83,8 @@ struct ProfileReducer {
                 )
                 return .none
 
-            case .settings(.presented(.delegate(.didFinishCreateAccount))):
-                return .run { @MainActor send in
-                    send(.currentUserLoaded(userManager.currentUser))
-                }
-
-            case .settings(.presented(.delegate(.didDeleteAccount))):
-                state.settings = nil
-                return .send(.delegate(.didDeleteAccount))
-
-            case .settings(.presented(.delegate(.didSignOut))):
-                state.settings = nil
-                return .send(.delegate(.didSignOut))
+            case let .settings(.presented(.delegate(delegate))):
+                return handleSettingsDelegate(&state, delegate)
 
             case .newAvatarButtonTapped:
                 state.createAvatar = CreateAvatarReducer.State()
@@ -113,7 +103,9 @@ struct ProfileReducer {
                 return .none
 
             case .deleteAvatar(let indexSet):
-                guard let index = indexSet.first else { return .none }
+                guard let index = indexSet.first else {
+                    return .none
+                }
                 state.myAvatars.remove(at: index)
                 return .none
 
@@ -127,6 +119,26 @@ struct ProfileReducer {
         }
         .ifLet(\.$settings, action: \.settings) {
             SettingsReducer()
+        }
+    }
+
+    private func handleSettingsDelegate(
+        _ state: inout State,
+        _ delegate: SettingsReducer.DelegateAction
+    ) -> Effect<Action> {
+        switch delegate {
+        case .didFinishCreateAccount:
+            return .run { @MainActor send in
+                send(.currentUserLoaded(userManager.currentUser))
+            }
+
+        case .didDeleteAccount:
+            state.settings = nil
+            return .send(.delegate(.didDeleteAccount))
+
+        case .didSignOut:
+            state.settings = nil
+            return .send(.delegate(.didSignOut))
         }
     }
 }
