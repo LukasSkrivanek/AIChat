@@ -126,6 +126,7 @@ struct ChatReducer {
             }
             return .none
         }
-        // Integrate presentation for alerts (no child reducer needed)
+        .ifLet(\.$alert, action: \.alert)
+        .ifLet(\.$confirmationDialog, action: \.confirmationDialog)
     }
 }

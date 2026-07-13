@@ -215,6 +215,7 @@ struct SettingsReducer {
         .ifLet(\.$createAccount, action: \.createAccount) {
             CreateAccountReducer()
         }
+        .ifLet(\.$alert, action: \.alert)
     }
 }
 
