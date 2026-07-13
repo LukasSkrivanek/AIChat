@@ -6,35 +6,41 @@
 //
 
 import SwiftUI
+import ComposableArchitecture
 
 struct ExploreView: View {
-    @State private var featuredAvatars: [AvatarModel] = AvatarModel.mocks
-    @State private var categories: [CharacterOption] = CharacterOption.allCases
-    @State private var popularAvatars: [AvatarModel] = AvatarModel.mocks
-    @State private var path: [NavigationPathOption] = []
+    @Bindable var store: StoreOf<ExploreReducer>
+
     var body: some View {
-        NavigationStack(path: $path) {
+        NavigationStack(path: $store.scope(state: \.path, action: \.path)) {
             List {
                 featureSection
                 categoriesSection
                 popularSection
             }
             .navigationTitle("Explore")
-            .navigationDestinationForCoreModule(path: $path)
+        } destination: { store in
+            switch store.case {
+            case let .category(store):
+                CategoryListView(store: store)
+
+            case let .chat(store):
+                ChatView(store: store)
+            }
         }
     }
     
     private var featureSection: some View {
         Section {
             ZStack {
-                CarouselView(items: featuredAvatars) { avatar in
+                CarouselView(items: store.featuredAvatars) { avatar in
                     HeroCellView(
                         title: avatar.name,
                         subtitle: avatar.characterDescription,
                         imageName: avatar.profileImageName
                     )
                     .anyButton(.plain) {
-                        onAvatarPress(avatar: avatar)
+                        store.send(.avatarTapped(avatar))
                     }
                 }
             }
@@ -47,8 +53,8 @@ struct ExploreView: View {
         Section {
             ScrollView(.horizontal) {
                 HStack(spacing: 12) {
-                    ForEach(filteredCategories, id: \.self) { category in
-                        let imageName = popularAvatars.first(where: {$0.characterOption == category})?.profileImageName
+                    ForEach(store.filteredCategories, id: \.self) { category in
+                        let imageName = store.popularAvatars.first(where: { $0.characterOption == category })?.profileImageName
                         if let imageName {
                             CategoryCellView(
                                 title: category.rawValue,
@@ -57,7 +63,7 @@ struct ExploreView: View {
                             .clipped()
                             .frame(width: 150)
                             .anyButton(.plain) {
-                                onCategoryPress(category: category, imageName: imageName)
+                                store.send(.categoryTapped(category: category, imageName: imageName))
                             }
                             
                         }
@@ -74,23 +80,16 @@ struct ExploreView: View {
         }
     }
     
-    /// Filtrované kategorie, které mají odpovídající avatar
-    private var filteredCategories: [CharacterOption] {
-        categories.filter { category in
-            popularAvatars.contains { $0.characterOption == category }
-        }
-    }
-    
     private var popularSection: some View {
         Section {
-            ForEach(popularAvatars, id: \.self) { popularAvatar in
+            ForEach(store.popularAvatars, id: \.self) { popularAvatar in
                 CustomListCellView(
                     imageName: popularAvatar.profileImageName,
                     title: popularAvatar.name,
                     subtitle: popularAvatar.characterDescription
                 )
                 .anyButton(.highlight) {
-                    onAvatarPress(avatar: popularAvatar)
+                    store.send(.avatarTapped(popularAvatar))
                 }
                 .removeListRowFormatting()
                 
@@ -101,16 +100,12 @@ struct ExploreView: View {
         }
         
     }
-    private func onAvatarPress(avatar: AvatarModel) {
-        path.append(.chat(avatarId: avatar.avatarId))
-    }
-    private func onCategoryPress(category: CharacterOption, imageName: String) {
-        path.append(.category(category: category, imageName: Constants.randomImage ))
-    }
 }
 
 #Preview {
-    NavigationStack {
-        ExploreView()
-    }
+    ExploreView(
+        store: Store(initialState: ExploreReducer.State()) {
+            ExploreReducer()
+        }
+    )
 }
