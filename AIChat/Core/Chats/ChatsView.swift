@@ -6,29 +6,34 @@
 //
 
 import SwiftUI
+import ComposableArchitecture
 
 struct ChatsView: View {
-    @State private var chats: [ChatModel] = ChatModel.mocks
-    @State private var path: [NavigationPathOption] = []
-    @State private var recentAvatars: [AvatarModel] = AvatarModel.mocks
+    @Bindable var store: StoreOf<ChatsReducer>
+
     var body: some View {
-        NavigationStack(path: $path) {
+        NavigationStack(path: $store.scope(state: \.path, action: \.path)) {
             List {
-                if !recentAvatars.isEmpty {
+                if !store.recentAvatars.isEmpty {
                     recentSection
                 }
 
                 chatSection
             }
             .navigationTitle("Chats")
-            .navigationDestinationForCoreModule(path: $path)
+        } destination: { store in
+            switch store.case {
+            case let .chat(store):
+                ChatView(store: store)
+            }
         }
     }
+
     private var recentSection: some View {
         Section {
             ScrollView(.horizontal) {
                 LazyHStack(spacing: 8) {
-                    ForEach(recentAvatars, id: \.self) { avatar in
+                    ForEach(store.recentAvatars, id: \.self) { avatar in
                         if let imageName =  avatar.profileImageName {
                             VStack(spacing: 8) {
                                 ImageLoaderView(urlString: imageName)
@@ -40,7 +45,7 @@ struct ChatsView: View {
                                     .foregroundStyle(.secondary)
                             }
                             .anyButton {
-                                onAvatarPress(avatar: avatar)
+                                store.send(.avatarTapped(avatar))
                             }
                         }
                     }
@@ -55,9 +60,10 @@ struct ChatsView: View {
             Text("Recents")
         }
     }
+
     private var chatSection: some View {
         Section {
-            if chats.isEmpty {
+            if store.chats.isEmpty {
                 Text("Your chats will appear here")
                     .foregroundStyle(.secondary)
                     .font(.title3)
@@ -66,7 +72,7 @@ struct ChatsView: View {
                     .padding(40)
                     .removeListRowFormatting()
             } else {
-                ForEach(chats) { chat in
+                ForEach(store.chats) { chat in
                     ChatRoCellViewBuilder(
                         currentUserId: nil,
                         chat: chat) {
@@ -77,7 +83,7 @@ struct ChatsView: View {
                             return .mock
                         }
                         .anyButton(.highlight) {
-                            onChatPress(chat: chat)
+                            store.send(.chatTapped(chat))
                         }
                         .removeListRowFormatting()
                 }
@@ -86,14 +92,12 @@ struct ChatsView: View {
             Text("Chats")
         }
     }
-    private func onChatPress(chat: ChatModel) {
-        path.append(.chat(avatarId: chat.avatarId))
-    }
-    private func onAvatarPress(avatar: AvatarModel) {
-        path.append(.chat(avatarId: avatar.avatarId))
-    }
 }
 
 #Preview {
-    ChatsView()
+    ChatsView(
+        store: Store(initialState: ChatsReducer.State()) {
+            ChatsReducer()
+        }
+    )
 }
