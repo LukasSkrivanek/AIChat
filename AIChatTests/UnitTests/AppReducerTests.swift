@@ -70,7 +70,7 @@ struct AppReducerTests {
         #expect(tabBar.explore.path.count == 1)
 
         guard case let .category(categoryState)? = tabBar.explore.path.first else {
-            Issue.record("Expected first explore path element to be category.")
+            Issue.record(Comment(rawValue: "Expected first explore path element to be category."))
             return
         }
 
@@ -100,7 +100,7 @@ struct AppReducerTests {
         await store.send(.deepLink(.chat(avatarId: deeplinkAvatar.avatarId))) {
             $0.pendingDeepLink = nil
             guard case var .tabBar(tabBar) = $0.destination else {
-                Issue.record("Expected tabBar destination after chat deeplink.")
+                Issue.record(Comment(rawValue: "Expected tabBar destination after chat deeplink."))
                 return
             }
 
@@ -148,7 +148,7 @@ struct AppReducerTests {
         await store.send(.deepLink(.settings)) {
             $0.pendingDeepLink = nil
             guard case var .tabBar(tabBar) = $0.destination else {
-                Issue.record("Expected tabBar destination after settings deeplink.")
+                Issue.record(Comment(rawValue: "Expected tabBar destination after settings deeplink."))
                 return
             }
 
@@ -187,7 +187,7 @@ struct AppReducerTests {
         issue: String
     ) -> TabBarReducer.State? {
         guard case let .tabBar(tabBar) = state.destination else {
-            Issue.record(issue)
+            Issue.record(Comment(rawValue: issue))
             return nil
         }
 
