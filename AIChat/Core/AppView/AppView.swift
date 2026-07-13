@@ -11,6 +11,7 @@ import ComposableArchitecture
 struct AppView: View {
 
     @Bindable var store: StoreOf<AppReducer>
+    private let deepLinkParser = DeepLinkParser()
 
     var body: some View {
         Group {
@@ -45,6 +46,13 @@ struct AppView: View {
         }
         .onAppear {
             store.send(.onAppear)
+        }
+        .onOpenURL { url in
+            guard let deepLink = deepLinkParser.parse(url) else {
+                return
+            }
+
+            store.send(.deepLink(deepLink))
         }
         .alert($store.scope(state: \.alert, action: \.alert))
     }

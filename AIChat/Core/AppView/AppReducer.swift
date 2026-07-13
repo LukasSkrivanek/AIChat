@@ -26,9 +26,11 @@ struct AppReducer {
     struct State: Equatable {
         var destination: Destination.State = .launching
         @Presents var alert: AlertState<AlertAction>?
+        var pendingDeepLink: DeepLink?
     }
 
     enum Action {
+        case deepLink(DeepLink)
         case destination(Destination.Action)
         case onAppear
         case refreshSession
@@ -49,6 +51,10 @@ struct AppReducer {
         }
         Reduce { state, action in
             switch action {
+            case .deepLink(let deepLink):
+                handleDeepLink(deepLink, state: &state)
+                return .none
+
             case .onAppear, .refreshSession:
                 state.destination = .launching
                 return .run { @MainActor send in
@@ -71,6 +77,7 @@ struct AppReducer {
                     didCompleteOnboarding: didCompleteOnboarding,
                     isNewUser: isNewUser
                 )
+                handlePendingDeepLink(state: &state)
                 return .none
 
             case .sessionLoadFailed(let errorMessage):
@@ -111,10 +118,12 @@ struct AppReducer {
                     didCompleteOnboarding: didCompleteOnboarding,
                     isNewUser: isNewUser
                 )
+                handlePendingDeepLink(state: &state)
                 return .none
 
             case .destination(.onboarding(.delegate(.didFinish))):
                 state.destination = .tabBar(TabBarReducer.State())
+                handlePendingDeepLink(state: &state)
                 return .none
 
             case .destination(.tabBar(.profile(.delegate(.didSignOut)))),
@@ -137,6 +146,68 @@ struct AppReducer {
         } else {
             return .tabBar(TabBarReducer.State())
         }
+    }
+
+    private func handlePendingDeepLink(state: inout State) {
+        guard let pendingDeepLink = state.pendingDeepLink else {
+            return
+        }
+
+        handleDeepLink(pendingDeepLink, state: &state)
+    }
+
+    private func handleDeepLink(
+        _ deepLink: DeepLink,
+        state: inout State
+    ) {
+        guard case var .tabBar(tabBar) = state.destination else {
+            state.pendingDeepLink = deepLink
+            return
+        }
+
+        state.pendingDeepLink = nil
+
+        switch deepLink {
+        case .category(let category):
+            tabBar.selectedTab = .explore
+            tabBar.explore.path.append(
+                .category(
+                    CategoryListReducer.State(
+                        avatars: tabBar.explore.popularAvatars.filter {
+                            $0.characterOption == category
+                        },
+                        category: category,
+                        imageName: tabBar.explore.popularAvatars.first {
+                            $0.characterOption == category
+                        }?.profileImageName ?? Constants.randomImage
+                    )
+                )
+            )
+
+        case .chat(let avatarId):
+            tabBar.selectedTab = .chats
+            tabBar.chats.path.append(
+                .chat(
+                    ChatReducer.State(
+                        avatar: tabBar.chats.recentAvatars.first {
+                            $0.avatarId == avatarId
+                        },
+                        avatarId: avatarId
+                    )
+                )
+            )
+
+        case .profile:
+            tabBar.selectedTab = .profile
+
+        case .settings:
+            tabBar.selectedTab = .profile
+            tabBar.profile.settings = SettingsReducer.State(
+                isAnonymousUser: tabBar.profile.isAnonymousUser
+            )
+        }
+
+        state.destination = .tabBar(tabBar)
     }
 }
 

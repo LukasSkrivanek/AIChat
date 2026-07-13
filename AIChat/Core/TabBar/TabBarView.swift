@@ -14,13 +14,13 @@ struct TabBarView: View {
 
     var body: some View {
         TabView(selection: $store.selectedTab.sending(\.selectedTabChanged)) {
-            ExploreView()
+            ExploreView(store: store.scope(state: \.explore, action: \.explore))
             .tabItem {
                 Label("Explore", systemImage: "eyes")
             }
             .tag(TabBarReducer.Tab.explore)
 
-            ChatsView()
+            ChatsView(store: store.scope(state: \.chats, action: \.chats))
             .tabItem {
                 Label("Chats", systemImage: "bubble.left.and.bubble.right.fill")
             }
