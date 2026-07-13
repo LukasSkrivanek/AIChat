@@ -22,10 +22,10 @@ struct ProfileReducer {
     @ObservableState
     struct State: Equatable {
         var currentUser: UserModel? = .mock
+        @Presents var createAvatar: CreateAvatarReducer.State?
         var isLoading: Bool = true
         var myAvatars: [AvatarModel] = []
         var path = StackState<Path.State>()
-        var showCreateAvatar: Bool = false
         @Presents var settings: SettingsReducer.State?
 
         var isAnonymousUser: Bool {
@@ -35,11 +35,11 @@ struct ProfileReducer {
     
     enum Action {
         case currentUserLoaded(UserModel?)
+        case createAvatar(PresentationAction<CreateAvatarReducer.Action>)
         case task
         case loadDataResult([AvatarModel])
         case settingsButtonTapped
         case newAvatarButtonTapped
-        case createAvatarDismissed
         case avatarTapped(AvatarModel)
         case deleteAvatar(IndexSet)
         case delegate(DelegateAction)
@@ -97,11 +97,7 @@ struct ProfileReducer {
                 return .send(.delegate(.didSignOut))
 
             case .newAvatarButtonTapped:
-                state.showCreateAvatar = true
-                return .none
-
-            case .createAvatarDismissed:
-                state.showCreateAvatar = false
+                state.createAvatar = CreateAvatarReducer.State()
                 return .none
 
             case .avatarTapped(let avatar):
@@ -121,11 +117,14 @@ struct ProfileReducer {
                 state.myAvatars.remove(at: index)
                 return .none
 
-            case .delegate, .settings, .path:
+            case .createAvatar, .delegate, .settings, .path:
                 return .none
             }
         }
         .forEach(\.path, action: \.path)
+        .ifLet(\.$createAvatar, action: \.createAvatar) {
+            CreateAvatarReducer()
+        }
         .ifLet(\.$settings, action: \.settings) {
             SettingsReducer()
         }

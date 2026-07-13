@@ -9,6 +9,7 @@
 /* Begin PBXBuildFile section */
 		74240E7E2FBB0BC000243AF5 /* SwiftfulFirestore in Frameworks */ = {isa = PBXBuildFile; productRef = 74240E7D2FBB0BC000243AF5 /* SwiftfulFirestore */; };
 		7473B9852EF6C25D002EF4AA /* ComposableArchitecture in Frameworks */ = {isa = PBXBuildFile; productRef = 7473B9842EF6C25D002EF4AA /* ComposableArchitecture */; };
+		74D7BB2D2FC493E600F96131 /* FirebaseFunctions in Frameworks */ = {isa = PBXBuildFile; productRef = 74D7BB2C2FC493E600F96131 /* FirebaseFunctions */; };
 		FA44EF6D2D12DC6400AFF3EC /* SDWebImageSwiftUI in Frameworks */ = {isa = PBXBuildFile; productRef = FA44EF6C2D12DC6400AFF3EC /* SDWebImageSwiftUI */; };
 		FAA014B82D38F336007675DB /* FirebaseAuth in Frameworks */ = {isa = PBXBuildFile; productRef = FAA014B72D38F336007675DB /* FirebaseAuth */; };
 		FAA014BA2D38F336007675DB /* FirebaseFirestore in Frameworks */ = {isa = PBXBuildFile; productRef = FAA014B92D38F336007675DB /* FirebaseFirestore */; };
@@ -64,6 +65,7 @@
 				7473B9852EF6C25D002EF4AA /* ComposableArchitecture in Frameworks */,
 				FAA014D22D392CC9007675DB /* SignInAppleAsync in Frameworks */,
 				74240E7E2FBB0BC000243AF5 /* SwiftfulFirestore in Frameworks */,
+				74D7BB2D2FC493E600F96131 /* FirebaseFunctions in Frameworks */,
 				FA44EF6D2D12DC6400AFF3EC /* SDWebImageSwiftUI in Frameworks */,
 				FAA014B82D38F336007675DB /* FirebaseAuth in Frameworks */,
 				FAA014BA2D38F336007675DB /* FirebaseFirestore in Frameworks */,
@@ -87,12 +89,20 @@
 /* End PBXFrameworksBuildPhase section */
 
 /* Begin PBXGroup section */
+		74D7BB2B2FC493D300F96131 /* Frameworks */ = {
+			isa = PBXGroup;
+			children = (
+			);
+			name = Frameworks;
+			sourceTree = "<group>";
+		};
 		FA44EEBB2D103BA100AFF3EC = {
 			isa = PBXGroup;
 			children = (
 				FA44EEC62D103BA100AFF3EC /* AIChat */,
 				FA44EED72D103BA300AFF3EC /* AIChatTests */,
 				FA44EEE12D103BA300AFF3EC /* AIChatUITests */,
+				74D7BB2B2FC493D300F96131 /* Frameworks */,
 				FA44EEC52D103BA100AFF3EC /* Products */,
 			);
 			sourceTree = "<group>";
@@ -134,6 +144,7 @@
 				FAA014D12D392CC9007675DB /* SignInAppleAsync */,
 				7473B9842EF6C25D002EF4AA /* ComposableArchitecture */,
 				74240E7D2FBB0BC000243AF5 /* SwiftfulFirestore */,
+				74D7BB2C2FC493E600F96131 /* FirebaseFunctions */,
 			);
 			productName = AIChat;
 			productReference = FA44EEC42D103BA100AFF3EC /* AIChat.app */;
@@ -378,8 +389,8 @@
 				MTL_FAST_MATH = YES;
 				ONLY_ACTIVE_ARCH = YES;
 				SDKROOT = iphoneos;
-				SWIFT_APPROACHABLE_CONCURRENCY = YES;
 				SWIFT_ACTIVE_COMPILATION_CONDITIONS = "DEBUG $(inherited)";
+				SWIFT_APPROACHABLE_CONCURRENCY = YES;
 				SWIFT_DEFAULT_ACTOR_ISOLATION = MainActor;
 				SWIFT_OPTIMIZATION_LEVEL = "-Onone";
 				SWIFT_VERSION = 6.0;
@@ -437,8 +448,8 @@
 				MTL_ENABLE_DEBUG_INFO = NO;
 				MTL_FAST_MATH = YES;
 				SDKROOT = iphoneos;
-				SWIFT_COMPILATION_MODE = wholemodule;
 				SWIFT_APPROACHABLE_CONCURRENCY = YES;
+				SWIFT_COMPILATION_MODE = wholemodule;
 				SWIFT_DEFAULT_ACTOR_ISOLATION = MainActor;
 				SWIFT_VERSION = 6.0;
 				VALIDATE_PRODUCT = YES;
@@ -693,6 +704,11 @@
 			isa = XCSwiftPackageProductDependency;
 			package = 7473B9832EF6C25D002EF4AA /* XCRemoteSwiftPackageReference "swift-composable-architecture" */;
 			productName = ComposableArchitecture;
+		};
+		74D7BB2C2FC493E600F96131 /* FirebaseFunctions */ = {
+			isa = XCSwiftPackageProductDependency;
+			package = FAA014B62D38F336007675DB /* XCRemoteSwiftPackageReference "firebase-ios-sdk" */;
+			productName = FirebaseFunctions;
 		};
 		FA44EF6C2D12DC6400AFF3EC /* SDWebImageSwiftUI */ = {
 			isa = XCSwiftPackageProductDependency;
