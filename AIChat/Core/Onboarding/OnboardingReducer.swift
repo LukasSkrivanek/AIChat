@@ -65,7 +65,7 @@ struct OnboardingReducer {
         var isCompletingProfileSetup = false
         var selectedColor: ProfileColor?
         var step: Step = .intro
-        @Presents var alert: AlertState<Action.Alert>?
+        @Presents var alert: AlertState<AlertAction>?
 
         let profileColors: [ProfileColor]
 
@@ -74,7 +74,7 @@ struct OnboardingReducer {
             profileColors: [ProfileColor] = ProfileColor.allCases,
             selectedColor: ProfileColor? = nil,
             step: Step = .intro,
-            alert: AlertState<Action.Alert>? = nil
+            alert: AlertState<AlertAction>? = nil
         ) {
             self.isCompletingProfileSetup = isCompletingProfileSetup
             self.profileColors = profileColors
@@ -86,23 +86,23 @@ struct OnboardingReducer {
 
     enum Action {
         case continueFromColorButtonTapped
-        case delegate(Delegate)
+        case delegate(DelegateAction)
         case finishButtonTapped
         case finishProfileSetupCompleted
         case finishProfileSetupFailed(String)
         case getStartedButtonTapped
         case profileColorTapped(ProfileColor)
-        case alert(PresentationAction<Alert>)
+        case alert(PresentationAction<AlertAction>)
+    }
 
-        @CasePathable
-        enum Alert: Equatable {
-            case dismiss
-        }
+    @CasePathable
+    enum AlertAction: Equatable {
+        case dismiss
+    }
 
-        @CasePathable
-        enum Delegate: Equatable {
-            case didFinish
-        }
+    @CasePathable
+    enum DelegateAction: Equatable {
+        case didFinish
     }
 
     var body: some Reducer<State, Action> {

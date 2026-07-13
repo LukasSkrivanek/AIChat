@@ -27,22 +27,22 @@ struct AppReducer {
     @ObservableState
     struct State: Equatable {
         var destination: Destination.State = .launching
-        @Presents var alert: AlertState<Action.Alert>?
+        @Presents var alert: AlertState<AlertAction>?
     }
 
     enum Action {
         case destination(Destination.Action)
         case onAppear
         case refreshSession
-        case userStatusCheckSucceeded
-        case userStatusCheckFailed(String)
-        case alert(PresentationAction<Alert>)
+        case sessionLoaded(didCompleteOnboarding: Bool, isNewUser: Bool)
+        case sessionLoadFailed(String)
+        case alert(PresentationAction<AlertAction>)
+    }
 
-        @CasePathable
-        enum Alert: Equatable {
-            case retryTapped
-            case dismissTapped
-        }
+    @CasePathable
+    enum AlertAction: Equatable {
+        case retryTapped
+        case dismissTapped
     }
 
     var body: some Reducer<State, Action> {
@@ -55,21 +55,27 @@ struct AppReducer {
                 state.destination = .launching
                 return .run { send in
                     do {
-                        try await checkUserStatus()
-                        await send(.userStatusCheckSucceeded)
+                        let session = try await loadSessionState()
+                        await send(
+                            .sessionLoaded(
+                                didCompleteOnboarding: session.didCompleteOnboarding,
+                                isNewUser: session.isNewUser
+                            )
+                        )
                     } catch {
-                        await send(.userStatusCheckFailed(errorMessage(for: error)))
+                        await send(.sessionLoadFailed(errorMessage(for: error)))
                     }
                 }
 
-            case .userStatusCheckSucceeded:
+            case .sessionLoaded(let didCompleteOnboarding, let isNewUser):
                 state.alert = nil
-                state.destination = hasCompletedOnboarding()
-                    ? .tabBar(TabBarReducer.State())
-                    : .onboarding(OnboardingReducer.State())
+                state.destination = authenticatedDestination(
+                    didCompleteOnboarding: didCompleteOnboarding,
+                    isNewUser: isNewUser
+                )
                 return .none
 
-            case .userStatusCheckFailed(let errorMessage):
+            case .sessionLoadFailed(let errorMessage):
                 state.destination = .welcome(WelcomeReducer.State())
                 state.alert = AlertState(
                     title: { TextState("Could not start app") },
@@ -102,8 +108,11 @@ struct AppReducer {
                 state.destination = .onboarding(OnboardingReducer.State())
                 return .none
 
-            case .destination(.welcome(.delegate(.didSignIn(let isNewUser)))):
-                state.destination = authenticatedDestination(isNewUser: isNewUser)
+            case .destination(.welcome(.delegate(.didSignIn(let isNewUser, let didCompleteOnboarding)))):
+                state.destination = authenticatedDestination(
+                    didCompleteOnboarding: didCompleteOnboarding,
+                    isNewUser: isNewUser
+                )
                 return .none
 
             case .destination(.onboarding(.delegate(.didFinish))):
@@ -122,23 +131,30 @@ struct AppReducer {
     }
 
     // MARK: - Private Methods
-    private func checkUserStatus() async throws {
+    private func loadSessionState() async throws -> (didCompleteOnboarding: Bool, isNewUser: Bool) {
         if let user = authManager.auth {
             print("User is authenticated: \(user.uId)")
-            try await userManager.logIn(auth: user, isNewUser: false)
+            let currentUser = try await userManager.establishUserSession(auth: user, isNewUser: false)
+            return (
+                didCompleteOnboarding: currentUser.didCompleteOnboarding == true,
+                isNewUser: false
+            )
         } else {
             let result = try await authManager.signInAnonymously()
             print("Sign in anonymously: \(result.user.uId)")
-            try await userManager.logIn(auth: result.user, isNewUser: result.isNewUser)
+            let currentUser = try await userManager.establishUserSession(auth: result.user, isNewUser: result.isNewUser)
+            return (
+                didCompleteOnboarding: currentUser.didCompleteOnboarding == true,
+                isNewUser: result.isNewUser
+            )
         }
     }
 
-    private func hasCompletedOnboarding() -> Bool {
-        userManager.currentUser?.didCompleteOnboarding == true
-    }
-
-    private func authenticatedDestination(isNewUser: Bool = false) -> Destination.State {
-        if isNewUser || !hasCompletedOnboarding() {
+    private func authenticatedDestination(
+        didCompleteOnboarding: Bool,
+        isNewUser: Bool = false
+    ) -> Destination.State {
+        if isNewUser || !didCompleteOnboarding {
             return .onboarding(OnboardingReducer.State())
         } else {
             return .tabBar(TabBarReducer.State())

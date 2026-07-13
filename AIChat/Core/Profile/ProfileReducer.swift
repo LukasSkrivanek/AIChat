@@ -16,22 +16,25 @@ struct ProfileReducer {
         case chat(ChatReducer)
     }
 
-    @Dependency(\.authManager)
-    var authManager
     @Dependency(\.userManager)
     var userManager
 
     @ObservableState
     struct State: Equatable {
         var currentUser: UserModel? = .mock
-        var myAvatars: [AvatarModel] = []
         var isLoading: Bool = true
+        var myAvatars: [AvatarModel] = []
         var path = StackState<Path.State>()
         var showCreateAvatar: Bool = false
         @Presents var settings: SettingsReducer.State?
+
+        var isAnonymousUser: Bool {
+            currentUser?.isAnonymous == true
+        }
     }
     
     enum Action {
+        case currentUserLoaded(UserModel?)
         case task
         case loadDataResult([AvatarModel])
         case settingsButtonTapped
@@ -39,15 +42,15 @@ struct ProfileReducer {
         case createAvatarDismissed
         case avatarTapped(AvatarModel)
         case deleteAvatar(IndexSet)
-        case delegate(Delegate)
+        case delegate(DelegateAction)
         case path(StackActionOf<Path>)
         case settings(PresentationAction<SettingsReducer.Action>)
+    }
 
-        @CasePathable
-        enum Delegate: Equatable {
-            case didDeleteAccount
-            case didSignOut
-        }
+    @CasePathable
+    enum DelegateAction: Equatable {
+        case didDeleteAccount
+        case didSignOut
     }
 
     var body: some Reducer<State, Action> {
@@ -55,21 +58,35 @@ struct ProfileReducer {
             switch action {
             case .task:
                 state.isLoading = true
-                return .run { send in
-                    await send(.loadDataResult(AvatarModel.mocks))
-                }
+                return .merge(
+                    .run { @MainActor send in
+                        send(.currentUserLoaded(userManager.currentUser))
+                    },
+                    .run { send in
+                        await send(.loadDataResult(AvatarModel.mocks))
+                    }
+                )
+
+            case .currentUserLoaded(let currentUser):
+                state.currentUser = currentUser
+                state.settings?.isAnonymousUser = currentUser?.isAnonymous == true
+                return .none
 
             case .loadDataResult(let avatars):
                 state.isLoading = false
-                state.currentUser = userManager.currentUser
                 state.myAvatars = avatars
                 return .none
 
             case .settingsButtonTapped:
                 state.settings = SettingsReducer.State(
-                    isAnonymousUser: authManager.auth?.isAnonymous == true
+                    isAnonymousUser: state.isAnonymousUser
                 )
                 return .none
+
+            case .settings(.presented(.delegate(.didFinishCreateAccount))):
+                return .run { @MainActor send in
+                    send(.currentUserLoaded(userManager.currentUser))
+                }
 
             case .settings(.presented(.delegate(.didDeleteAccount))):
                 state.settings = nil

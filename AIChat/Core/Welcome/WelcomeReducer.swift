@@ -16,16 +16,16 @@ struct WelcomeReducer {
     }
 
     enum Action {
-        case delegate(Delegate)
+        case delegate(DelegateAction)
         case getStartedButtonTapped
         case signInButtonTapped
         case createAccount(PresentationAction<CreateAccountReducer.Action>)
+    }
 
-        @CasePathable
-        enum Delegate: Equatable {
-            case didSignIn(isNewUser: Bool)
-            case showOnboarding
-        }
+    @CasePathable
+    enum DelegateAction: Equatable {
+        case didSignIn(isNewUser: Bool, didCompleteOnboarding: Bool)
+        case showOnboarding
     }
 
     var body: some Reducer<State, Action> {
@@ -41,8 +41,15 @@ struct WelcomeReducer {
                 )
                 return .none
 
-            case .createAccount(.presented(.delegate(.didSignIn(let isNewUser)))):
-                return .send(.delegate(.didSignIn(isNewUser: isNewUser)))
+            case .createAccount(.presented(.delegate(.didSignIn(let isNewUser, let didCompleteOnboarding)))):
+                return .send(
+                    .delegate(
+                        .didSignIn(
+                            isNewUser: isNewUser,
+                            didCompleteOnboarding: didCompleteOnboarding
+                        )
+                    )
+                )
 
             case .createAccount, .delegate:
                 return .none

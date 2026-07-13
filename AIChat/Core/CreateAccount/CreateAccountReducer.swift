@@ -20,25 +20,25 @@ struct CreateAccountReducer {
         var title: String = "Create Account"
         var subtitle: String = "Don't lose your data! Connect to an SSO provider to save your account."
         var isLoading = false
-        @Presents var alert: AlertState<Action.Alert>?
+        @Presents var alert: AlertState<AlertAction>?
     }
 
     enum Action {
         case signInAppleButtonTapped
-        case signInAppleSucceeded(isNewUser: Bool)
+        case signInAppleSucceeded(isNewUser: Bool, didCompleteOnboarding: Bool)
         case signInAppleFailed(String)
-        case alert(PresentationAction<Alert>)
-        case delegate(Delegate)
+        case alert(PresentationAction<AlertAction>)
+        case delegate(DelegateAction)
+    }
 
-        @CasePathable
-        enum Alert: Equatable {
-            case dismiss
-        }
+    @CasePathable
+    enum AlertAction: Equatable {
+        case dismiss
+    }
 
-        @CasePathable
-        enum Delegate: Equatable {
-            case didSignIn(isNewUser: Bool)
-        }
+    @CasePathable
+    enum DelegateAction: Equatable {
+        case didSignIn(isNewUser: Bool, didCompleteOnboarding: Bool)
     }
 
     var body: some Reducer<State, Action> {
@@ -49,17 +49,32 @@ struct CreateAccountReducer {
                 return .run { send in
                     do {
                         let result = try await authManager.signInApple()
-                        try await userManager.logIn(auth: result.user, isNewUser: result.isNewUser)
-                        await send(.signInAppleSucceeded(isNewUser: result.isNewUser))
+                        let currentUser = try await userManager.establishUserSession(
+                            auth: result.user,
+                            isNewUser: result.isNewUser
+                        )
+                        await send(
+                            .signInAppleSucceeded(
+                                isNewUser: result.isNewUser,
+                                didCompleteOnboarding: currentUser.didCompleteOnboarding == true
+                            )
+                        )
                     } catch {
                         await send(.signInAppleFailed(errorMessage(for: error)))
                     }
                 }
 
-            case .signInAppleSucceeded(let isNewUser):
+            case .signInAppleSucceeded(let isNewUser, let didCompleteOnboarding):
                 state.isLoading = false
                 return .run { send in
-                    await send(.delegate(.didSignIn(isNewUser: isNewUser)))
+                    await send(
+                        .delegate(
+                            .didSignIn(
+                                isNewUser: isNewUser,
+                                didCompleteOnboarding: didCompleteOnboarding
+                            )
+                        )
+                    )
                     await dismiss()
                 }
 
