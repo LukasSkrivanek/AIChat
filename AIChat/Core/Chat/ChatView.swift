@@ -28,7 +28,7 @@ struct ChatView: View {
                     }
             }
         }
-        .alert(store: store.scope(state: \.$alert, action: \.alert))
+        .alert($store.scope(state: \.alert, action: \.alert))
         .showModal(showModal: $store.showProfileModal) {
             if let avatar  = store.avatar {
                 profileModal(avatar: avatar)

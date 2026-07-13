@@ -27,7 +27,7 @@ struct SettingsView: View {
                     .presentationDetents([.medium])
             }
         }
-        .alert(store: store.scope(state: \.$alert, action: \.alert))
+        .alert($store.scope(state: \.alert, action: \.alert))
         .overlay {
             if store.isDeletingAccount {
                 ZStack {
@@ -144,27 +144,24 @@ fileprivate extension View {
 
 #Preview("No auth") {
     SettingsView(
-        store: Store(initialState: SettingsReducer.State()) {
+        store: Store(initialState: SettingsReducer.State(isAnonymousUser: false)) {
             SettingsReducer()
-                .dependency(\.authManager, AuthManager(service: MockAuthService(user: nil)))
         }
     )
 }
 
 #Preview("Anonymous") {
     SettingsView(
-        store: Store(initialState: SettingsReducer.State()) {
+        store: Store(initialState: SettingsReducer.State(isAnonymousUser: true)) {
             SettingsReducer()
-                .dependency(\.authManager, AuthManager(service: MockAuthService(user: UserAuthInfo.mock(isAnonymous: true))))
         }
     )
 }
 
 #Preview("No Anonymous") {
     SettingsView(
-        store: Store(initialState: SettingsReducer.State()) {
+        store: Store(initialState: SettingsReducer.State(isAnonymousUser: false)) {
             SettingsReducer()
-                .dependency(\.authManager, AuthManager(service: MockAuthService(user: UserAuthInfo.mock(isAnonymous: false))))
         }
     )
 }

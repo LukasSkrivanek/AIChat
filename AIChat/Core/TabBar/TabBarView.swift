@@ -14,28 +14,19 @@ struct TabBarView: View {
 
     var body: some View {
         TabView(selection: $store.selectedTab.sending(\.selectedTabChanged)) {
-            NavigationStack {
-                ExploreView()
-                    .navigationTitle("Explore")
-            }
+            ExploreView()
             .tabItem {
                 Label("Explore", systemImage: "eyes")
             }
             .tag(TabBarReducer.Tab.explore)
 
-            NavigationStack {
-                ChatsView()
-                    .navigationTitle("Chats")
-            }
+            ChatsView()
             .tabItem {
                 Label("Chats", systemImage: "bubble.left.and.bubble.right.fill")
             }
             .tag(TabBarReducer.Tab.chats)
 
-            NavigationStack {
-                ProfileView(store: store.scope(state: \.profile, action: \.profile))
-                    .navigationTitle("Profile")
-            }
+            ProfileView(store: store.scope(state: \.profile, action: \.profile))
             .tabItem {
                 Label("Profile", systemImage: "person.fill")
             }
