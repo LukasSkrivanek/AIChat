@@ -189,6 +189,7 @@ struct AppReducer {
             tabBar.chats.path.append(
                 .chat(
                     ChatReducer.State(
+                        currentUser: tabBar.profile.currentUser,
                         avatar: tabBar.chats.recentAvatars.first {
                             $0.avatarId == avatarId
                         },

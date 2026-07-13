@@ -10,6 +10,7 @@
 		74240E7E2FBB0BC000243AF5 /* SwiftfulFirestore in Frameworks */ = {isa = PBXBuildFile; productRef = 74240E7D2FBB0BC000243AF5 /* SwiftfulFirestore */; };
 		7473B9852EF6C25D002EF4AA /* ComposableArchitecture in Frameworks */ = {isa = PBXBuildFile; productRef = 7473B9842EF6C25D002EF4AA /* ComposableArchitecture */; };
 		74D7BB2D2FC493E600F96131 /* FirebaseFunctions in Frameworks */ = {isa = PBXBuildFile; productRef = 74D7BB2C2FC493E600F96131 /* FirebaseFunctions */; };
+		A1B2C3D42F00000100ABCDEF /* SnapshotTesting in Frameworks */ = {isa = PBXBuildFile; productRef = A1B2C3D62F00000100ABCDEF /* SnapshotTesting */; };
 		FA44EF6D2D12DC6400AFF3EC /* SDWebImageSwiftUI in Frameworks */ = {isa = PBXBuildFile; productRef = FA44EF6C2D12DC6400AFF3EC /* SDWebImageSwiftUI */; };
 		FAA014B82D38F336007675DB /* FirebaseAuth in Frameworks */ = {isa = PBXBuildFile; productRef = FAA014B72D38F336007675DB /* FirebaseAuth */; };
 		FAA014BA2D38F336007675DB /* FirebaseFirestore in Frameworks */ = {isa = PBXBuildFile; productRef = FAA014B92D38F336007675DB /* FirebaseFirestore */; };
@@ -89,6 +90,7 @@
 			isa = PBXFrameworksBuildPhase;
 			buildActionMask = 2147483647;
 			files = (
+				A1B2C3D42F00000100ABCDEF /* SnapshotTesting in Frameworks */,
 			);
 			runOnlyForDeploymentPostprocessing = 0;
 		};
@@ -181,6 +183,7 @@
 			);
 			name = AIChatTests;
 			packageProductDependencies = (
+				A1B2C3D62F00000100ABCDEF /* SnapshotTesting */,
 			);
 			productName = AIChatTests;
 			productReference = FA44EED42D103BA300AFF3EC /* AIChatTests.xctest */;
@@ -247,6 +250,7 @@
 				FAA014D02D392CC9007675DB /* XCRemoteSwiftPackageReference "SignInAppleAsync" */,
 				7473B9832EF6C25D002EF4AA /* XCRemoteSwiftPackageReference "swift-composable-architecture" */,
 				74240E7C2FBB0BC000243AF5 /* XCRemoteSwiftPackageReference "SwiftfulFirestore" */,
+				A1B2C3D52F00000100ABCDEF /* XCRemoteSwiftPackageReference "swift-snapshot-testing" */,
 			);
 			preferredProjectObjectVersion = 77;
 			productRefGroup = FA44EEC52D103BA100AFF3EC /* Products */;
@@ -683,6 +687,14 @@
 				minimumVersion = 1.23.1;
 			};
 		};
+		A1B2C3D52F00000100ABCDEF /* XCRemoteSwiftPackageReference "swift-snapshot-testing" */ = {
+			isa = XCRemoteSwiftPackageReference;
+			repositoryURL = "https://github.com/pointfreeco/swift-snapshot-testing";
+			requirement = {
+				kind = upToNextMajorVersion;
+				minimumVersion = 1.12.0;
+			};
+		};
 		FA44EF6B2D12DC6400AFF3EC /* XCRemoteSwiftPackageReference "SDWebImageSwiftUI" */ = {
 			isa = XCRemoteSwiftPackageReference;
 			repositoryURL = "https://github.com/SDWebImage/SDWebImageSwiftUI.git";
@@ -724,6 +736,11 @@
 			isa = XCSwiftPackageProductDependency;
 			package = FAA014B62D38F336007675DB /* XCRemoteSwiftPackageReference "firebase-ios-sdk" */;
 			productName = FirebaseFunctions;
+		};
+		A1B2C3D62F00000100ABCDEF /* SnapshotTesting */ = {
+			isa = XCSwiftPackageProductDependency;
+			package = A1B2C3D52F00000100ABCDEF /* XCRemoteSwiftPackageReference "swift-snapshot-testing" */;
+			productName = SnapshotTesting;
 		};
 		FA44EF6C2D12DC6400AFF3EC /* SDWebImageSwiftUI */ = {
 			isa = XCSwiftPackageProductDependency;

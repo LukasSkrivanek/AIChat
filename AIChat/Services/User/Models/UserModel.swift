@@ -71,16 +71,18 @@ struct UserModel: Codable, Equatable, Sendable {
     }
     
     static var mocks: [Self] {
-        [
+        let baseDate = Date(timeIntervalSinceReferenceDate: 1_234_567_890)
+
+        return [
             .init(
                 userId: "user_1",
-                creationDate: Date(),
+                creationDate: baseDate,
                 didCompleteOnboarding: true,
                 profileColorHex: "#33FF57"
             ),
             .init(
                 userId: "user_2",
-                creationDate: Date().addingTimeInterval(hours: -1),
+                creationDate: baseDate.addingTimeInterval(hours: -1),
                 didCompleteOnboarding: false,
                 profileColorHex: "#33FF57"
             ),
@@ -92,13 +94,13 @@ struct UserModel: Codable, Equatable, Sendable {
             ),
             .init(
                 userId: "user_4",
-                creationDate: Date().addingTimeInterval(hours: -4),
+                creationDate: baseDate.addingTimeInterval(hours: -4),
                 didCompleteOnboarding: true,
                 profileColorHex: "#3357FF"
             ),
             .init(
                 userId: "user_5",
-                creationDate: Date().addingTimeInterval(hours: -5),
+                creationDate: baseDate.addingTimeInterval(hours: -5),
                 didCompleteOnboarding: false,
                 profileColorHex: "#F3F315"
             )

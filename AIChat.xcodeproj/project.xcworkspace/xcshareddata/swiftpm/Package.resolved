@@ -1,5 +1,5 @@
 {
-  "originHash" : "d4ba5a5a18402d3bcf1e7413ad36a6b29d0fa6d1d279f24f0b0fba2855e67c9f",
+  "originHash" : "4579be4a37d42cf2f3f374a98f2dd81f12cf92071c4259e784046b8759791c7f",
   "pins" : [
     {
       "identity" : "abseil-cpp-binary",
@@ -260,6 +260,15 @@
       "state" : {
         "revision" : "3bfc408cc2d0bee2287c174da6b1c76768377818",
         "version" : "2.7.4"
+      }
+    },
+    {
+      "identity" : "swift-snapshot-testing",
+      "kind" : "remoteSourceControl",
+      "location" : "https://github.com/pointfreeco/swift-snapshot-testing",
+      "state" : {
+        "revision" : "1bc16f430d8410e7f087d4c787767b26fd32fe30",
+        "version" : "1.19.3"
       }
     },
     {
