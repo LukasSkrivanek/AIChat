@@ -32,7 +32,9 @@ struct ChatMessageModel: Identifiable, Equatable {
     }
     
     func hasBeenSeenByCurrentUser(userId: String) -> Bool {
-        guard let seenByIds else { return false }
+        guard let seenByIds else {
+            return false
+        }
         return seenByIds.contains(userId)
     }
     
