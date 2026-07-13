@@ -5,7 +5,6 @@
 //  Created by Skrivanek, Lukas on 25.05.2026.
 //
 
-import OpenAI
 import UIKit
 import FirebaseFunctions
 
