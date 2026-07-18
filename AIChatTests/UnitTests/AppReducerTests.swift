@@ -110,9 +110,9 @@ struct AppReducerTests {
             tabBar.chats.path.append(
                 .chat(
                     ChatReducer.State(
-                        currentUser: deeplinkUser,
                         avatar: deeplinkAvatar,
-                        avatarId: deeplinkAvatar.avatarId
+                        avatarId: deeplinkAvatar.avatarId,
+                        currentUser: deeplinkUser
                     )
                 )
             )
