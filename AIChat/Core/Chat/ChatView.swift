@@ -39,7 +39,7 @@ struct ChatView: View {
     private var scrollViewSection: some View {
         ScrollView {
             LazyVStack(spacing: 24) {
-                ForEach(store.chatMessages) { message in
+                ForEach(displayedMessages) { message in
                     let isCurrentUser = message.authorId == store.currentUser?.userId
                     ChatBubbleViewBuilder(
                         message: message,
@@ -58,7 +58,7 @@ struct ChatView: View {
         }
         .defaultScrollAnchor(.bottom)
         .scrollPosition(id: $store.scrollPosition, anchor: .center)
-        .animation(.default, value: store.chatMessages.count)
+        .animation(.default, value: displayedMessages.count)
         .animation(.default, value: store.scrollPosition)
     }
     private var textFieldSection: some View {
@@ -102,6 +102,10 @@ struct ChatView: View {
             .padding(40)
             .transition(.move(edge: .leading))
     }
+
+    private var displayedMessages: [ChatMessageModel] {
+        store.chatMessages
+    }
    // private func onChatSettingsPress() {
    //     store.alert = AlertState(
    //            title: TextState("Možnosti chatu"),
@@ -119,8 +123,7 @@ struct ChatView: View {
         ChatView(
             store: Store(
                 initialState: ChatReducer.State(
-                    chatMessages:
-                        ChatMessageModel.mocks,
+                    chatMessagesResource: .loaded(ChatMessageModel.mocks),
                     textFieldText: "",
                     scrollPosition: nil,
                     showProfileModal: false

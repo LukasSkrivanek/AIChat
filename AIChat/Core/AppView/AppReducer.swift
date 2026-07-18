@@ -173,9 +173,11 @@ struct AppReducer {
             tabBar.explore.path.append(
                 .category(
                     CategoryListReducer.State(
-                        avatars: tabBar.explore.popularAvatars.filter {
-                            $0.characterOption == category
-                        },
+                        avatarsResource: .loaded(
+                            tabBar.explore.popularAvatars.filter {
+                                $0.characterOption == category
+                            }
+                        ),
                         category: category,
                         imageName: tabBar.explore.popularAvatars.first {
                             $0.characterOption == category
@@ -189,11 +191,11 @@ struct AppReducer {
             tabBar.chats.path.append(
                 .chat(
                     ChatReducer.State(
-                        currentUser: tabBar.profile.currentUser,
                         avatar: tabBar.chats.recentAvatars.first {
                             $0.avatarId == avatarId
                         },
-                        avatarId: avatarId
+                        avatarId: avatarId,
+                        currentUser: tabBar.profile.currentUser
                     )
                 )
             )

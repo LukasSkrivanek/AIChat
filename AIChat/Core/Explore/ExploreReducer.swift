@@ -6,6 +6,7 @@
 //
 
 import ComposableArchitecture
+import LoadableAccessorMacros
 
 @Reducer
 struct ExploreReducer {
@@ -17,11 +18,12 @@ struct ExploreReducer {
     }
 
     @ObservableState
+    @LoadableAccessors
     struct State: Equatable {
         var categories: [CharacterOption] = CharacterOption.allCases
-        var featuredAvatars: [AvatarModel] = AvatarModel.mocks
+        var featuredAvatarsResource: Loadable<[AvatarModel]> = .loaded(AvatarModel.mocks)
         var path = StackState<Path.State>()
-        var popularAvatars: [AvatarModel] = AvatarModel.mocks
+        var popularAvatarsResource: Loadable<[AvatarModel]> = .loaded(AvatarModel.mocks)
 
         var filteredCategories: [CharacterOption] {
             categories.filter { category in
@@ -56,7 +58,9 @@ struct ExploreReducer {
                 state.path.append(
                     .category(
                         CategoryListReducer.State(
-                            avatars: state.popularAvatars.filter { $0.characterOption == category },
+                            avatarsResource: .loaded(
+                                state.popularAvatars.filter { $0.characterOption == category }
+                            ),
                             category: category,
                             imageName: imageName
                         )

@@ -64,6 +64,8 @@ struct ProfileView: View {
                 Group {
                     if store.isLoading {
                         ProgressView()
+                            .frame(maxWidth: .infinity)
+                            .removeListRowFormatting()
                     } else {
                         Text("Click + to create an avatar")
                             .padding(50)

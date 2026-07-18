@@ -44,9 +44,11 @@ struct AppReducerTests {
             tabBar.explore.path.append(
                 .category(
                     CategoryListReducer.State(
-                        avatars: tabBar.explore.popularAvatars.filter {
-                            $0.characterOption == .alien
-                        },
+                        avatarsResource: .loaded(
+                            tabBar.explore.popularAvatars.filter {
+                                $0.characterOption == .alien
+                            }
+                        ),
                         category: .alien,
                         imageName: tabBar.explore.popularAvatars.first {
                             $0.characterOption == .alien
@@ -86,11 +88,11 @@ struct AppReducerTests {
                 destination: .tabBar(
                     TabBarReducer.State(
                         chats: ChatsReducer.State(
-                            recentAvatars: [deeplinkAvatar]
+                            recentAvatarsResource: .loaded([deeplinkAvatar])
                         ),
                         profile: ProfileReducer.State(
                             currentUser: deeplinkUser,
-                            isLoading: false
+                            isLoading: false,
                         )
                     )
                 )
@@ -138,7 +140,7 @@ struct AppReducerTests {
                     TabBarReducer.State(
                         profile: ProfileReducer.State(
                             currentUser: UserModel.mock,
-                            isLoading: false
+                            isLoading: false,
                         )
                     )
                 )

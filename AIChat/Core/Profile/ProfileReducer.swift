@@ -94,16 +94,17 @@ struct ProfileReducer {
                 state.path.append(
                     .chat(
                         ChatReducer.State(
-                            currentUser: state.currentUser,
                             avatar: avatar,
-                            avatarId: avatar.avatarId
+                            avatarId: avatar.avatarId,
+                            currentUser: state.currentUser
                         )
                     )
                 )
                 return .none
 
             case .deleteAvatar(let indexSet):
-                guard let index = indexSet.first else {
+                guard let index = indexSet.first
+                else {
                     return .none
                 }
                 state.myAvatars.remove(at: index)
