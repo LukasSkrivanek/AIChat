@@ -227,6 +227,14 @@
 				TargetAttributes = {
 					FA44EEC32D103BA100AFF3EC = {
 						CreatedOnToolsVersion = 16.2;
+						SystemCapabilities = {
+							com.apple.BackgroundModes = {
+								enabled = 1;
+							};
+							com.apple.Push = {
+								enabled = 1;
+							};
+						};
 					};
 					FA44EED32D103BA300AFF3EC = {
 						CreatedOnToolsVersion = 16.2;
@@ -254,7 +262,7 @@
 				7473B9832EF6C25D002EF4AA /* XCRemoteSwiftPackageReference "swift-composable-architecture" */,
 				74240E7C2FBB0BC000243AF5 /* XCRemoteSwiftPackageReference "SwiftfulFirestore" */,
 				A1B2C3D52F00000100ABCDEF /* XCRemoteSwiftPackageReference "swift-snapshot-testing" */,
-				B1AA00022F00000100ABCDEF /* XCLocalSwiftPackageReference "LoadableAccessorMacros" */,
+				B1AA00022F00000100ABCDEF /* XCLocalSwiftPackageReference "Packages/LoadableAccessorMacros" */,
 			);
 			preferredProjectObjectVersion = 77;
 			productRefGroup = FA44EEC52D103BA100AFF3EC /* Products */;
@@ -565,6 +573,7 @@
 			isa = XCBuildConfiguration;
 			buildSettings = {
 				BUNDLE_LOADER = "$(TEST_HOST)";
+				"CODE_SIGN_IDENTITY[sdk=macosx*]" = "Apple Development";
 				CODE_SIGN_STYLE = Automatic;
 				CURRENT_PROJECT_VERSION = 1;
 				GENERATE_INFOPLIST_FILE = YES;
@@ -584,6 +593,7 @@
 			isa = XCBuildConfiguration;
 			buildSettings = {
 				BUNDLE_LOADER = "$(TEST_HOST)";
+				"CODE_SIGN_IDENTITY[sdk=macosx*]" = "Apple Development";
 				CODE_SIGN_STYLE = Automatic;
 				CURRENT_PROJECT_VERSION = 1;
 				GENERATE_INFOPLIST_FILE = YES;
@@ -602,6 +612,7 @@
 		FA44EEEF2D103BA300AFF3EC /* Debug */ = {
 			isa = XCBuildConfiguration;
 			buildSettings = {
+				"CODE_SIGN_IDENTITY[sdk=macosx*]" = "Apple Development";
 				CODE_SIGN_STYLE = Automatic;
 				CURRENT_PROJECT_VERSION = 1;
 				GENERATE_INFOPLIST_FILE = YES;
@@ -619,6 +630,7 @@
 		FA44EEF02D103BA300AFF3EC /* Release */ = {
 			isa = XCBuildConfiguration;
 			buildSettings = {
+				"CODE_SIGN_IDENTITY[sdk=macosx*]" = "Apple Development";
 				CODE_SIGN_STYLE = Automatic;
 				CURRENT_PROJECT_VERSION = 1;
 				GENERATE_INFOPLIST_FILE = YES;
@@ -674,6 +686,13 @@
 		};
 /* End XCConfigurationList section */
 
+/* Begin XCLocalSwiftPackageReference section */
+		B1AA00022F00000100ABCDEF /* XCLocalSwiftPackageReference "Packages/LoadableAccessorMacros" */ = {
+			isa = XCLocalSwiftPackageReference;
+			relativePath = Packages/LoadableAccessorMacros;
+		};
+/* End XCLocalSwiftPackageReference section */
+
 /* Begin XCRemoteSwiftPackageReference section */
 		74240E7C2FBB0BC000243AF5 /* XCRemoteSwiftPackageReference "SwiftfulFirestore" */ = {
 			isa = XCRemoteSwiftPackageReference;
@@ -725,13 +744,6 @@
 		};
 /* End XCRemoteSwiftPackageReference section */
 
-/* Begin XCLocalSwiftPackageReference section */
-		B1AA00022F00000100ABCDEF /* XCLocalSwiftPackageReference "LoadableAccessorMacros" */ = {
-			isa = XCLocalSwiftPackageReference;
-			relativePath = Packages/LoadableAccessorMacros;
-		};
-/* End XCLocalSwiftPackageReference section */
-
 /* Begin XCSwiftPackageProductDependency section */
 		74240E7D2FBB0BC000243AF5 /* SwiftfulFirestore */ = {
 			isa = XCSwiftPackageProductDependency;
@@ -755,7 +767,7 @@
 		};
 		B1AA00032F00000100ABCDEF /* LoadableAccessorMacros */ = {
 			isa = XCSwiftPackageProductDependency;
-			package = B1AA00022F00000100ABCDEF /* XCLocalSwiftPackageReference "LoadableAccessorMacros" */;
+			package = B1AA00022F00000100ABCDEF /* XCLocalSwiftPackageReference "Packages/LoadableAccessorMacros" */;
 			productName = LoadableAccessorMacros;
 		};
 		FA44EF6C2D12DC6400AFF3EC /* SDWebImageSwiftUI */ = {

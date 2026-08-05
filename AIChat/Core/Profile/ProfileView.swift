@@ -76,7 +76,7 @@ struct ProfileView: View {
                     }
                 }
             } else {
-                ForEach(store.myAvatars, id: \.self) { avatar in
+                ForEach(store.myAvatars) { avatar in
                     CustomListCellView(
                         imageName: avatar.profileImageName,
                         title: avatar.name,

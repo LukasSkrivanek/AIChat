@@ -18,22 +18,29 @@ struct SettingsView: View {
                     .removeListRowFormatting()
                 purchaseSection
                     .removeListRowFormatting()
+                securitySection
+                    .removeListRowFormatting()
                 applicationSection
                     .removeListRowFormatting()
             }
             .navigationTitle("Settings")
-            .sheet(item: $store.scope(state: \.createAccount, action: \.createAccount)) { createAccountStore in
+            .task {
+                store.send(.task)
+            }
+            .sheet(item: $store.scope(state: \.appLockSetup, action: \.appLockSetup)) { appLockSetupStore in
+                AppLockSetupView(store: appLockSetupStore)
+            }
+            .fullScreenCover(item: $store.scope(state: \.createAccount, action: \.createAccount)) { createAccountStore in
                 CreateAccountView(store: createAccountStore)
-                    .presentationDetents([.medium])
             }
         }
         .alert($store.scope(state: \.alert, action: \.alert))
         .overlay {
-            if store.isDeletingAccount {
+            if store.isDeletingAccount || store.isSendingSecurityEmail {
                 ZStack {
                     Color.black.opacity(0.15)
                         .ignoresSafeArea()
-                    ProgressView("Deleting account…")
+                    ProgressView(store.isDeletingAccount ? "Deleting account…" : "Sending security email…")
                         .padding(20)
                         .background(.regularMaterial, in: RoundedRectangle(cornerRadius: 16))
                 }
@@ -93,6 +100,43 @@ struct SettingsView: View {
             Text("Purchases")
         }
     }
+
+    private var securitySection: some View {
+        Section {
+            Text(store.isAppLockEnabled ? "Change PIN" : "Set up App Lock")
+                .padding(.leading)
+                .rowFormatting()
+                .anyButton(.highlight) {
+                    store.send(.appLockButtonTapped)
+                }
+
+            if store.isAppLockEnabled, store.supportedBiometry != .none {
+                Toggle(
+                    "Use \(store.supportedBiometry.displayName)",
+                    isOn: Binding(
+                        get: { store.isBiometricUnlockEnabled },
+                        set: { store.send(.biometricUnlockToggled($0)) }
+                    )
+                )
+                .padding(.leading)
+                .padding(.trailing)
+                .rowFormatting()
+            }
+
+            if store.isAppLockEnabled {
+                Text("Turn off App Lock")
+                    .padding(.leading)
+                    .foregroundStyle(.red)
+                    .rowFormatting()
+                    .anyButton(.highlight) {
+                        store.send(.disableAppLockButtonTapped)
+                    }
+            }
+        } header: {
+            Text("Security")
+        }
+    }
+
     private var applicationSection: some View {
         Section {
             HStack(spacing: 8) {

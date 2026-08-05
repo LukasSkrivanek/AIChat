@@ -2,7 +2,7 @@
 //  MockFileManagerUserPersistence.swift
 //  AIChat
 //
-//  Created by Codex on 18.05.2026.
+//  Created by macbook on 18.05.2026.
 //
 
 import Foundation

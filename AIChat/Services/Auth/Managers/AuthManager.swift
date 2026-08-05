@@ -48,8 +48,16 @@ final class AuthManager {
         try await service.signInAnonymously()
     }
 
-    func signInApple() async throws -> (user: UserAuthInfo, isNewUser: Bool) {
-        try await service.signInApple()
+    func createUser(email: String, password: String) async throws -> (user: UserAuthInfo, isNewUser: Bool) {
+        try await service.createUser(email: email, password: password)
+    }
+
+    func sendPasswordReset(email: String) async throws {
+        try await service.sendPasswordReset(email: email)
+    }
+
+    func signIn(email: String, password: String) async throws -> (user: UserAuthInfo, isNewUser: Bool) {
+        try await service.signIn(email: email, password: password)
     }
 
     func signOut() throws {

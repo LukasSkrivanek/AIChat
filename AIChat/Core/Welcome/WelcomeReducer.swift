@@ -36,12 +36,12 @@ struct WelcomeReducer {
 
             case .signInButtonTapped:
                 state.createAccount = CreateAccountReducer.State(
-                    title: "Sign in",
-                    subtitle: "Connect to an existing account."
+                    mode: .signIn
                 )
                 return .none
 
             case .createAccount(.presented(.delegate(.didSignIn(let isNewUser, let didCompleteOnboarding)))):
+                state.createAccount = nil
                 return .send(
                     .delegate(
                         .didSignIn(

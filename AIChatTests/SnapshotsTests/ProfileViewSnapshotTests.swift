@@ -9,6 +9,7 @@ import SwiftUI
 import Testing
 import SnapshotTesting
 import ComposableArchitecture
+import IdentifiedCollections
 @testable import AIChat
 
 @MainActor
@@ -65,7 +66,7 @@ struct ProfileViewSnapshotTests {
                         profileColorHex: "#33FF57"
                     ),
                     isLoading: false,
-                    myAvatars: avatars
+                    myAvatars: IdentifiedArray(uniqueElements: avatars)
                 )
             ) {
                 ProfileReducer()

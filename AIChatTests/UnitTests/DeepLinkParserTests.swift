@@ -28,6 +28,11 @@ struct DeepLinkParserTests {
     }
 
     @Test
+    func parsesAppLockSetupDeepLink() {
+        #expect(parse("aichat://app-lock") == .appLockSetup)
+    }
+
+    @Test
     func rejectsInvalidScheme() {
         #expect(parse("https://profile") == nil)
     }

@@ -12,8 +12,16 @@
 			<key>CFBundleURLSchemes</key>
 			<array>
 				<string>aichat</string>
+				<string>app-1-480969734534-ios-07ea40e05b641980a25407</string>
 			</array>
 		</dict>
+	</array>
+	<key>NSFaceIDUsageDescription</key>
+	<string>Use Face ID to quickly unlock AIChat on this device.</string>
+	<key>UIBackgroundModes</key>
+	<array>
+		<string>fetch</string>
+		<string>remote-notification</string>
 	</array>
 </dict>
 </plist>

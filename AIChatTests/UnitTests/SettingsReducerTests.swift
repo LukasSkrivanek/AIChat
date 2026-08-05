@@ -14,6 +14,191 @@ import ComposableArchitecture
 struct SettingsReducerTests {
 
     @Test
+    func taskLoadsAppLockState() async {
+        let currentUser = UserModel(
+            userId: "user-1",
+            email: "lukas@example.com",
+            isAnonymous: false,
+            didCompleteOnboarding: true,
+            profileColorHex: "#000000"
+        )
+
+        let store = TestStore(
+            initialState: SettingsReducer.State()
+        ) {
+            SettingsReducer()
+        } withDependencies: {
+            $0.appLockClient = AppLockClient(
+                disable: {},
+                hasPIN: { true },
+                isBiometricUnlockEnabled: { true },
+                isEnabled: { true },
+                savePIN: { _ in },
+                setBiometricUnlockEnabled: { _ in },
+                verifyPIN: { _ in false }
+            )
+            $0.biometricAuthClient = BiometricAuthClient(
+                authenticate: { _ in },
+                biometryType: { .faceID }
+            )
+            $0.userManager = UserManager(
+                remoteService: MockUserService(user: currentUser),
+                localService: MockFileManagerUserPersistence(user: currentUser)
+            )
+        }
+
+        await store.send(.task) {
+            $0.isAppLockEnabled = true
+            $0.isBiometricUnlockEnabled = true
+            $0.supportedBiometry = .faceID
+            $0.isAnonymousUser = false
+        }
+    }
+
+    @Test
+    func appLockButtonTappedWithoutExistingPinPresentsSetup() async {
+        let store = TestStore(
+            initialState: SettingsReducer.State(
+                isAppLockEnabled: false,
+                isBiometricUnlockEnabled: true,
+                supportedBiometry: .faceID
+            )
+        ) {
+            SettingsReducer()
+        } withDependencies: {
+            $0.appLockClient = AppLockClient(
+                disable: {},
+                hasPIN: { false },
+                isBiometricUnlockEnabled: { true },
+                isEnabled: { false },
+                savePIN: { _ in },
+                setBiometricUnlockEnabled: { _ in },
+                verifyPIN: { _ in false }
+            )
+            $0.biometricAuthClient = BiometricAuthClient(
+                authenticate: { _ in },
+                biometryType: { .faceID }
+            )
+        }
+
+        await store.send(.appLockButtonTapped) {
+            $0.supportedBiometry = .faceID
+            $0.isBiometricUnlockEnabled = true
+            $0.appLockSetup = AppLockSetupReducer.State(
+                isBiometricAvailable: true,
+                isBiometricEnabled: true,
+                mode: .setup
+            )
+        }
+    }
+
+    @Test
+    func appLockButtonTappedWithExistingPinSendsSecurityEmail() async {
+        let sentEmail = Box<String?>(nil)
+        let currentUser = UserModel(
+            userId: "user-1",
+            email: "lukas@example.com",
+            isAnonymous: false,
+            didCompleteOnboarding: true,
+            profileColorHex: "#000000"
+        )
+
+        let store = TestStore(
+            initialState: SettingsReducer.State(
+                isAppLockEnabled: true,
+                isBiometricUnlockEnabled: true,
+                supportedBiometry: .faceID
+            )
+        ) {
+            SettingsReducer()
+        } withDependencies: {
+            $0.appLockClient = AppLockClient(
+                disable: {},
+                hasPIN: { true },
+                isBiometricUnlockEnabled: { true },
+                isEnabled: { true },
+                savePIN: { _ in },
+                setBiometricUnlockEnabled: { _ in },
+                verifyPIN: { _ in false }
+            )
+            $0.biometricAuthClient = BiometricAuthClient(
+                authenticate: { _ in },
+                biometryType: { .faceID }
+            )
+            $0.authManager = AuthManager(
+                service: SecurityEmailAuthService(
+                    onSendPasswordReset: { email in
+                        sentEmail.value = email
+                    }
+                )
+            )
+            $0.userManager = UserManager(
+                remoteService: MockUserService(user: currentUser),
+                localService: MockFileManagerUserPersistence(user: currentUser)
+            )
+        }
+
+        await store.send(.appLockButtonTapped) {
+            $0.supportedBiometry = .faceID
+            $0.isBiometricUnlockEnabled = true
+            $0.isSendingSecurityEmail = true
+        }
+        await store.receive(\.changePinSecurityEmailResponse.success, "lukas@example.com") {
+            $0.isSendingSecurityEmail = false
+            $0.alert = AlertState(
+                title: { TextState("Check your email") },
+                actions: {
+                    ButtonState(action: .continueToPinChange) {
+                        TextState("Continue")
+                    }
+                    ButtonState(role: .cancel) {
+                        TextState("Later")
+                    }
+                },
+                message: {
+                    TextState("We sent a security email to lukas@example.com. After you review it, continue to change your PIN.")
+                }
+            )
+        }
+
+        #expect(sentEmail.value == "lukas@example.com")
+    }
+
+    @Test
+    func disableAppLockButtonTappedDisablesAppLock() async {
+        let disabled = Box(false)
+
+        let store = TestStore(
+            initialState: SettingsReducer.State(
+                isAppLockEnabled: true,
+                isBiometricUnlockEnabled: true,
+                supportedBiometry: .faceID
+            )
+        ) {
+            SettingsReducer()
+        } withDependencies: {
+            $0.appLockClient = AppLockClient(
+                disable: {
+                    disabled.value = true
+                },
+                hasPIN: { true },
+                isBiometricUnlockEnabled: { true },
+                isEnabled: { true },
+                savePIN: { _ in },
+                setBiometricUnlockEnabled: { _ in },
+                verifyPIN: { _ in false }
+            )
+        }
+
+        await store.send(.disableAppLockButtonTapped) {
+            $0.isAppLockEnabled = false
+            $0.isBiometricUnlockEnabled = false
+        }
+
+        #expect(disabled.value)
+    }
+
+    @Test
     func deleteAccountButtonTappedPresentsConfirmationAlert() async {
         let store = TestStore(
             initialState: SettingsReducer.State()
@@ -272,6 +457,49 @@ struct SettingsReducerTests {
             $0.alert = nil
         }
     }
+
+    @Test
+    func continueToPinChangePresentsAppLockSetup() async {
+        let store = TestStore(
+            initialState: SettingsReducer.State(
+                isBiometricUnlockEnabled: true,
+                supportedBiometry: .faceID,
+                alert: AlertState(
+                    title: { TextState("Check your email") },
+                    actions: {
+                        ButtonState(action: .continueToPinChange) {
+                            TextState("Continue")
+                        }
+                        ButtonState(role: .cancel) {
+                            TextState("Later")
+                        }
+                    },
+                    message: {
+                        TextState("We sent a security email to lukas@example.com. After you review it, continue to change your PIN.")
+                    }
+                )
+            )
+        ) {
+            SettingsReducer()
+        }
+
+        await store.send(.alert(.presented(.continueToPinChange))) {
+            $0.alert = nil
+            $0.appLockSetup = AppLockSetupReducer.State(
+                isBiometricAvailable: true,
+                isBiometricEnabled: true,
+                mode: .changePIN
+            )
+        }
+    }
+}
+
+private final class Box<Value> {
+    var value: Value
+
+    init(_ value: Value) {
+        self.value = value
+    }
 }
 
 private struct FailingAuthService: AuthService {
@@ -281,15 +509,23 @@ private struct FailingAuthService: AuthService {
         }
     }
 
+    func createUser(email: String, password: String) async throws -> (user: UserAuthInfo, isNewUser: Bool) {
+        throw AuthServiceError.network
+    }
+
     func getAuthenticatedUser() -> UserAuthInfo? {
         nil
     }
 
-    func signInAnonymously() async throws -> (user: UserAuthInfo, isNewUser: Bool) {
+    func sendPasswordReset(email: String) async throws {
         throw AuthServiceError.network
     }
 
-    func signInApple() async throws -> (user: UserAuthInfo, isNewUser: Bool) {
+    func signIn(email: String, password: String) async throws -> (user: UserAuthInfo, isNewUser: Bool) {
+        throw AuthServiceError.network
+    }
+
+    func signInAnonymously() async throws -> (user: UserAuthInfo, isNewUser: Bool) {
         throw AuthServiceError.network
     }
 
@@ -309,15 +545,23 @@ private struct HangingAuthService: AuthService {
         }
     }
 
+    func createUser(email: String, password: String) async throws -> (user: UserAuthInfo, isNewUser: Bool) {
+        throw CancellationError()
+    }
+
     func getAuthenticatedUser() -> UserAuthInfo? {
         nil
     }
 
-    func signInAnonymously() async throws -> (user: UserAuthInfo, isNewUser: Bool) {
+    func sendPasswordReset(email: String) async throws {
         throw CancellationError()
     }
 
-    func signInApple() async throws -> (user: UserAuthInfo, isNewUser: Bool) {
+    func signIn(email: String, password: String) async throws -> (user: UserAuthInfo, isNewUser: Bool) {
+        throw CancellationError()
+    }
+
+    func signInAnonymously() async throws -> (user: UserAuthInfo, isNewUser: Bool) {
         throw CancellationError()
     }
 
@@ -327,5 +571,43 @@ private struct HangingAuthService: AuthService {
 
     func deleteAccount() async throws {
         try await Task.never()
+    }
+}
+
+private struct SecurityEmailAuthService: AuthService {
+    let onSendPasswordReset: @Sendable (String) -> Void
+
+    func addAuthenticatedUserListener(onListenerAttached: (any NSObjectProtocol) -> Void) -> AsyncStream<UserAuthInfo?> {
+        AsyncStream { continuation in
+            continuation.finish()
+        }
+    }
+
+    func createUser(email: String, password: String) async throws -> (user: UserAuthInfo, isNewUser: Bool) {
+        throw AuthServiceError.network
+    }
+
+    func deleteAccount() async throws {
+        throw AuthServiceError.network
+    }
+
+    func getAuthenticatedUser() -> UserAuthInfo? {
+        nil
+    }
+
+    func sendPasswordReset(email: String) async throws {
+        onSendPasswordReset(email)
+    }
+
+    func signIn(email: String, password: String) async throws -> (user: UserAuthInfo, isNewUser: Bool) {
+        throw AuthServiceError.network
+    }
+
+    func signInAnonymously() async throws -> (user: UserAuthInfo, isNewUser: Bool) {
+        throw AuthServiceError.network
+    }
+
+    func signOut() throws {
+        throw AuthServiceError.network
     }
 }

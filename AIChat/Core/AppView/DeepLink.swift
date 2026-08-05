@@ -8,6 +8,7 @@
 import Foundation
 
 enum DeepLink: Equatable {
+    case appLockSetup
     case category(CharacterOption)
     case chat(avatarId: String)
     case profile
@@ -45,6 +46,9 @@ struct DeepLinkParser {
 
         case "settings":
             return .settings
+
+        case "app-lock":
+            return .appLockSetup
 
         default:
             return nil

@@ -42,6 +42,14 @@ struct AppView: View {
                 ) {
                     TabBarView(store: tabBarStore)
                 }
+
+            case .unlock:
+                if let unlockStore = store.scope(
+                    state: \.destination.unlock,
+                    action: \.destination.unlock
+                ) {
+                    AppUnlockView(store: unlockStore)
+                }
             }
         }
         .onAppear {
