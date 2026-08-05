@@ -64,6 +64,8 @@ struct ProfileView: View {
                 Group {
                     if store.isLoading {
                         ProgressView()
+                            .frame(maxWidth: .infinity)
+                            .removeListRowFormatting()
                     } else {
                         Text("Click + to create an avatar")
                             .padding(50)
@@ -74,7 +76,7 @@ struct ProfileView: View {
                     }
                 }
             } else {
-                ForEach(store.myAvatars, id: \.self) { avatar in
+                ForEach(store.myAvatars) { avatar in
                     CustomListCellView(
                         imageName: avatar.profileImageName,
                         title: avatar.name,

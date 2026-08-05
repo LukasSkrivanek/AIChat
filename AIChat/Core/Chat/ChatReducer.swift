@@ -6,20 +6,23 @@
 //
 
 import ComposableArchitecture
+import LoadableAccessorMacros
 import SwiftUI
 
 @Reducer
 struct ChatReducer {
     
     @ObservableState
+    @LoadableAccessors
     struct State: Equatable {
-        var chatMessages: [ChatMessageModel] = []
+        var avatar: AvatarModel? = .mock
+        var avatarId: String = AvatarModel.mock.avatarId
+        var chatId: String?
+        var chatMessagesResource: Loadable<[ChatMessageModel]> = .loaded([])
+        var currentUser: UserModel? = .mock
         var textFieldText = ""
         var scrollPosition: String?
         var showProfileModal = false
-        var currentUser: UserModel? = .mock
-        var avatar: AvatarModel? = .mock
-        var avatarId: String = AvatarModel.mock.avatarId
         @Presents var alert: AlertState<AlertAction>?
         @Presents var confirmationDialog: ConfirmationDialogState<ConfirmationDialogAction>?
     }
@@ -94,16 +97,25 @@ struct ChatReducer {
                 let content = state.textFieldText
                 do {
                     try TextValidationHelper.checkTextFieldIsValid(text: content)
+                    if state.chatId == nil {
+                        state.chatId = uuid().uuidString
+                    }
+                    guard let chatId = state.chatId
+                    else {
+                        return .none
+                    }
                     let message = ChatMessageModel(
                         id: uuid().uuidString,
-                        chatId: uuid().uuidString,
+                        chatId: chatId,
                         authorId: currentUser.userId,
                         content: content,
                         seenByIds: nil,
                         dateCreated: date()
                     )
                     
-                    state.chatMessages.append(message)
+                    var chatMessages = state.chatMessages
+                    chatMessages.append(message)
+                    state.chatMessagesResource = .loaded(chatMessages)
                     state.scrollPosition = message.id
                     
                     state.textFieldText = ""

@@ -6,13 +6,15 @@
 //
 
 import ComposableArchitecture
+import LoadableAccessorMacros
 
 @Reducer
 struct CategoryListReducer {
 
     @ObservableState
+    @LoadableAccessors
     struct State: Equatable {
-        var avatars: [AvatarModel] = AvatarModel.mocks
+        var avatarsResource: Loadable<[AvatarModel]> = .loaded(AvatarModel.mocks)
         var category: CharacterOption = .alien
         var imageName: String = Constants.randomImage
     }

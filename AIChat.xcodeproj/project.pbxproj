@@ -11,6 +11,7 @@
 		7473B9852EF6C25D002EF4AA /* ComposableArchitecture in Frameworks */ = {isa = PBXBuildFile; productRef = 7473B9842EF6C25D002EF4AA /* ComposableArchitecture */; };
 		74D7BB2D2FC493E600F96131 /* FirebaseFunctions in Frameworks */ = {isa = PBXBuildFile; productRef = 74D7BB2C2FC493E600F96131 /* FirebaseFunctions */; };
 		A1B2C3D42F00000100ABCDEF /* SnapshotTesting in Frameworks */ = {isa = PBXBuildFile; productRef = A1B2C3D62F00000100ABCDEF /* SnapshotTesting */; };
+		B1AA00012F00000100ABCDEF /* LoadableAccessorMacros in Frameworks */ = {isa = PBXBuildFile; productRef = B1AA00032F00000100ABCDEF /* LoadableAccessorMacros */; };
 		FA44EF6D2D12DC6400AFF3EC /* SDWebImageSwiftUI in Frameworks */ = {isa = PBXBuildFile; productRef = FA44EF6C2D12DC6400AFF3EC /* SDWebImageSwiftUI */; };
 		FAA014B82D38F336007675DB /* FirebaseAuth in Frameworks */ = {isa = PBXBuildFile; productRef = FAA014B72D38F336007675DB /* FirebaseAuth */; };
 		FAA014BA2D38F336007675DB /* FirebaseFirestore in Frameworks */ = {isa = PBXBuildFile; productRef = FAA014B92D38F336007675DB /* FirebaseFirestore */; };
@@ -77,6 +78,7 @@
 			buildActionMask = 2147483647;
 			files = (
 				7473B9852EF6C25D002EF4AA /* ComposableArchitecture in Frameworks */,
+				B1AA00012F00000100ABCDEF /* LoadableAccessorMacros in Frameworks */,
 				FAA014D22D392CC9007675DB /* SignInAppleAsync in Frameworks */,
 				74240E7E2FBB0BC000243AF5 /* SwiftfulFirestore in Frameworks */,
 				74D7BB2D2FC493E600F96131 /* FirebaseFunctions in Frameworks */,
@@ -160,6 +162,7 @@
 				7473B9842EF6C25D002EF4AA /* ComposableArchitecture */,
 				74240E7D2FBB0BC000243AF5 /* SwiftfulFirestore */,
 				74D7BB2C2FC493E600F96131 /* FirebaseFunctions */,
+				B1AA00032F00000100ABCDEF /* LoadableAccessorMacros */,
 			);
 			productName = AIChat;
 			productReference = FA44EEC42D103BA100AFF3EC /* AIChat.app */;
@@ -224,6 +227,14 @@
 				TargetAttributes = {
 					FA44EEC32D103BA100AFF3EC = {
 						CreatedOnToolsVersion = 16.2;
+						SystemCapabilities = {
+							com.apple.BackgroundModes = {
+								enabled = 1;
+							};
+							com.apple.Push = {
+								enabled = 1;
+							};
+						};
 					};
 					FA44EED32D103BA300AFF3EC = {
 						CreatedOnToolsVersion = 16.2;
@@ -251,6 +262,7 @@
 				7473B9832EF6C25D002EF4AA /* XCRemoteSwiftPackageReference "swift-composable-architecture" */,
 				74240E7C2FBB0BC000243AF5 /* XCRemoteSwiftPackageReference "SwiftfulFirestore" */,
 				A1B2C3D52F00000100ABCDEF /* XCRemoteSwiftPackageReference "swift-snapshot-testing" */,
+				B1AA00022F00000100ABCDEF /* XCLocalSwiftPackageReference "Packages/LoadableAccessorMacros" */,
 			);
 			preferredProjectObjectVersion = 77;
 			productRefGroup = FA44EEC52D103BA100AFF3EC /* Products */;
@@ -561,6 +573,7 @@
 			isa = XCBuildConfiguration;
 			buildSettings = {
 				BUNDLE_LOADER = "$(TEST_HOST)";
+				"CODE_SIGN_IDENTITY[sdk=macosx*]" = "Apple Development";
 				CODE_SIGN_STYLE = Automatic;
 				CURRENT_PROJECT_VERSION = 1;
 				GENERATE_INFOPLIST_FILE = YES;
@@ -580,6 +593,7 @@
 			isa = XCBuildConfiguration;
 			buildSettings = {
 				BUNDLE_LOADER = "$(TEST_HOST)";
+				"CODE_SIGN_IDENTITY[sdk=macosx*]" = "Apple Development";
 				CODE_SIGN_STYLE = Automatic;
 				CURRENT_PROJECT_VERSION = 1;
 				GENERATE_INFOPLIST_FILE = YES;
@@ -598,6 +612,7 @@
 		FA44EEEF2D103BA300AFF3EC /* Debug */ = {
 			isa = XCBuildConfiguration;
 			buildSettings = {
+				"CODE_SIGN_IDENTITY[sdk=macosx*]" = "Apple Development";
 				CODE_SIGN_STYLE = Automatic;
 				CURRENT_PROJECT_VERSION = 1;
 				GENERATE_INFOPLIST_FILE = YES;
@@ -615,6 +630,7 @@
 		FA44EEF02D103BA300AFF3EC /* Release */ = {
 			isa = XCBuildConfiguration;
 			buildSettings = {
+				"CODE_SIGN_IDENTITY[sdk=macosx*]" = "Apple Development";
 				CODE_SIGN_STYLE = Automatic;
 				CURRENT_PROJECT_VERSION = 1;
 				GENERATE_INFOPLIST_FILE = YES;
@@ -669,6 +685,13 @@
 			defaultConfigurationName = Release;
 		};
 /* End XCConfigurationList section */
+
+/* Begin XCLocalSwiftPackageReference section */
+		B1AA00022F00000100ABCDEF /* XCLocalSwiftPackageReference "Packages/LoadableAccessorMacros" */ = {
+			isa = XCLocalSwiftPackageReference;
+			relativePath = Packages/LoadableAccessorMacros;
+		};
+/* End XCLocalSwiftPackageReference section */
 
 /* Begin XCRemoteSwiftPackageReference section */
 		74240E7C2FBB0BC000243AF5 /* XCRemoteSwiftPackageReference "SwiftfulFirestore" */ = {
@@ -741,6 +764,11 @@
 			isa = XCSwiftPackageProductDependency;
 			package = A1B2C3D52F00000100ABCDEF /* XCRemoteSwiftPackageReference "swift-snapshot-testing" */;
 			productName = SnapshotTesting;
+		};
+		B1AA00032F00000100ABCDEF /* LoadableAccessorMacros */ = {
+			isa = XCSwiftPackageProductDependency;
+			package = B1AA00022F00000100ABCDEF /* XCLocalSwiftPackageReference "Packages/LoadableAccessorMacros" */;
+			productName = LoadableAccessorMacros;
 		};
 		FA44EF6C2D12DC6400AFF3EC /* SDWebImageSwiftUI */ = {
 			isa = XCSwiftPackageProductDependency;

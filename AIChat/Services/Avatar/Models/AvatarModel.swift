@@ -7,7 +7,7 @@
 import Foundation
 
 // imutable struct 
-struct AvatarModel: Hashable, Equatable {
+struct AvatarModel: Hashable, Equatable, Identifiable {
     let avatarId: String
     let name: String?
     let characterOption: CharacterOption?
@@ -39,6 +39,10 @@ struct AvatarModel: Hashable, Equatable {
     
     var characterDescription: String {
         AvatarDescriptionBuilder(avatar: self).characterDescription
+    }
+
+    var id: String {
+        avatarId
     }
     
     static var mock: AvatarModel {

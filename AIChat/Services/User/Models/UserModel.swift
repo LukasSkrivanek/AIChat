@@ -10,6 +10,8 @@ import SwiftUI
 struct UserModel: Codable, Equatable, Sendable {
     let userId: String
     let email: String?
+    let phoneNumber: String?
+    let isPhoneVerified: Bool?
     let isAnonymous: Bool?
     let creationDate: Date?
     let lastSignInDate: Date?
@@ -20,6 +22,8 @@ struct UserModel: Codable, Equatable, Sendable {
     init(
         userId: String,
         email: String? = nil,
+        phoneNumber: String? = nil,
+        isPhoneVerified: Bool? = nil,
         isAnonymous: Bool? = nil,
         creationDate: Date? = nil,
         lastSignInDate: Date? = nil,
@@ -29,6 +33,8 @@ struct UserModel: Codable, Equatable, Sendable {
     ) {
         self.userId = userId
         self.email = email
+        self.phoneNumber = phoneNumber
+        self.isPhoneVerified = isPhoneVerified
         self.isAnonymous = isAnonymous
         self.creationDate = creationDate
         self.creationVersion = creationVersion
@@ -51,6 +57,8 @@ struct UserModel: Codable, Equatable, Sendable {
     enum CodingKeys: String, CodingKey {
         case userId = "user_id"
         case email
+        case phoneNumber = "phone_number"
+        case isPhoneVerified = "is_phone_verified"
         case isAnonymous = "is_anonymous"
         case creationVersion = "creation_version"
         case creationDate = "creation_date"

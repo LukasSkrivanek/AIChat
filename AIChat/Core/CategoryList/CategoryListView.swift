@@ -20,15 +20,29 @@ struct CategoryListView: View {
                 cornerRadius: 0
             )
             .removeListRowFormatting()
-            
-            ForEach(store.avatars, id: \.self) { avatar in
-                CustomListCellView(
-                    imageName: avatar.profileImageName,
-                    title: avatar.name,
-                    subtitle: avatar.characterDescription
-                )
-                .anyButton(.highlight) {
-                    store.send(.avatarTapped(avatar))
+
+            switch store.avatarsResource {
+            case .idle, .loading:
+                ProgressView()
+                    .frame(maxWidth: .infinity)
+                    .removeListRowFormatting()
+
+            case .failed(let message):
+                Text(message)
+                    .foregroundStyle(.secondary)
+                    .frame(maxWidth: .infinity)
+                    .removeListRowFormatting()
+
+            case .loaded(let avatars):
+                ForEach(avatars, id: \.self) { avatar in
+                    CustomListCellView(
+                        imageName: avatar.profileImageName,
+                        title: avatar.name,
+                        subtitle: avatar.characterDescription
+                    )
+                    .anyButton(.highlight) {
+                        store.send(.avatarTapped(avatar))
+                    }
                 }
             }
         }

@@ -21,8 +21,8 @@ struct AIChatTests {
 
         let store = TestStore(
             initialState: ChatReducer.State(
-                textFieldText: "Hi SwiftTesting",
-                currentUser: user
+                currentUser: user,
+                textFieldText: "Hi SwiftTesting"
             ),
             reducer: { ChatReducer()
             }, withDependencies: {
@@ -34,19 +34,20 @@ struct AIChatTests {
             }
         )
 
-        await store.send(.onSendMessageTapped) {
-            $0.chatMessages = [
+        await store.send(ChatReducer.Action.onSendMessageTapped) {
+            $0.chatId = firstUUID.uuidString
+            $0.chatMessagesResource = Loadable.loaded([
                 ChatMessageModel(
-                    id: firstUUID.uuidString,
-                    chatId: secondUUID.uuidString,
+                    id: secondUUID.uuidString,
+                    chatId: firstUUID.uuidString,
                     authorId: user.userId,
                     content: "Hi SwiftTesting",
                     seenByIds: nil,
                     dateCreated: Date(timeIntervalSinceReferenceDate: 1976)
                 )
-            ]
+            ])
             $0.textFieldText = ""
-            $0.scrollPosition = firstUUID.uuidString
+            $0.scrollPosition = secondUUID.uuidString
         }
 
         #expect(store.state.chatMessages.count == 1)

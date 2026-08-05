@@ -22,15 +22,35 @@ struct MockAuthService: AuthService {
     func getAuthenticatedUser() -> UserAuthInfo? {
         currentUser
     }
+
+    func sendPasswordReset(email: String) async throws {
+    }
+
+    func createUser(email: String, password: String) async throws -> (user: UserAuthInfo, isNewUser: Bool) {
+        let user = UserAuthInfo(
+            uid: currentUser?.uId ?? "mock_email_user",
+            email: email,
+            isAnonymous: false,
+            creationDate: .now,
+            lastSignInDate: .now
+        )
+        return (user, true)
+    }
+
+    func signIn(email: String, password: String) async throws -> (user: UserAuthInfo, isNewUser: Bool) {
+        let user = UserAuthInfo(
+            uid: "mock_signed_in_user",
+            email: email,
+            isAnonymous: false,
+            creationDate: .now,
+            lastSignInDate: .now
+        )
+        return (user, false)
+    }
     
     func signInAnonymously() async throws -> (user: UserAuthInfo, isNewUser: Bool) {
         let user = UserAuthInfo.mock(isAnonymous: true)
         return (user, true)
-    }
-    
-    func signInApple() async throws -> (user: UserAuthInfo, isNewUser: Bool) {
-        let user = UserAuthInfo.mock(isAnonymous: false)
-        return (user, false)
     }
     
     func signOut() throws {

@@ -33,9 +33,8 @@ struct WelcomeView: View {
                     .foregroundStyle(.accent)
             }
         }
-        .sheet(item: $store.scope(state: \.createAccount, action: \.createAccount)) { createAccountStore in
+        .fullScreenCover(item: $store.scope(state: \.createAccount, action: \.createAccount)) { createAccountStore in
             CreateAccountView(store: createAccountStore)
-                .presentationDetents([.medium])
         }
     }
 

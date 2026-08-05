@@ -44,9 +44,11 @@ struct AppReducerTests {
             tabBar.explore.path.append(
                 .category(
                     CategoryListReducer.State(
-                        avatars: tabBar.explore.popularAvatars.filter {
-                            $0.characterOption == .alien
-                        },
+                        avatarsResource: .loaded(
+                            tabBar.explore.popularAvatars.filter {
+                                $0.characterOption == .alien
+                            }
+                        ),
                         category: .alien,
                         imageName: tabBar.explore.popularAvatars.first {
                             $0.characterOption == .alien
@@ -86,11 +88,11 @@ struct AppReducerTests {
                 destination: .tabBar(
                     TabBarReducer.State(
                         chats: ChatsReducer.State(
-                            recentAvatars: [deeplinkAvatar]
+                            recentAvatarsResource: .loaded([deeplinkAvatar])
                         ),
                         profile: ProfileReducer.State(
                             currentUser: deeplinkUser,
-                            isLoading: false
+                            isLoading: false,
                         )
                     )
                 )
@@ -108,9 +110,9 @@ struct AppReducerTests {
             tabBar.chats.path.append(
                 .chat(
                     ChatReducer.State(
-                        currentUser: deeplinkUser,
                         avatar: deeplinkAvatar,
-                        avatarId: deeplinkAvatar.avatarId
+                        avatarId: deeplinkAvatar.avatarId,
+                        currentUser: deeplinkUser
                     )
                 )
             )
@@ -138,7 +140,7 @@ struct AppReducerTests {
                     TabBarReducer.State(
                         profile: ProfileReducer.State(
                             currentUser: UserModel.mock,
-                            isLoading: false
+                            isLoading: false,
                         )
                     )
                 )
@@ -172,13 +174,222 @@ struct AppReducerTests {
         #expect(tabBar.profile.settings?.isAnonymousUser == false)
     }
 
+    @Test
+    func appLockSetupDeepLinkRoutesToProfileAndPresentsSetup() async {
+        let store = makeStore(
+            initialState: AppReducer.State(
+                destination: .tabBar(
+                    TabBarReducer.State(
+                        profile: ProfileReducer.State(
+                            currentUser: UserModel.mock,
+                            isLoading: false,
+                        )
+                    )
+                )
+            ),
+            withDependencies: {
+                $0.appLockClient = AppLockClient(
+                    disable: {},
+                    hasPIN: { false },
+                    isBiometricUnlockEnabled: { true },
+                    isEnabled: { false },
+                    savePIN: { _ in },
+                    setBiometricUnlockEnabled: { _ in },
+                    verifyPIN: { _ in false }
+                )
+                $0.biometricAuthClient = BiometricAuthClient(
+                    authenticate: { _ in },
+                    biometryType: { .faceID }
+                )
+            }
+        )
+
+        await store.send(.deepLink(.appLockSetup)) {
+            $0.pendingDeepLink = nil
+            guard case var .tabBar(tabBar) = $0.destination else {
+                Issue.record(Comment(rawValue: "Expected tabBar destination after app lock setup deeplink."))
+                return
+            }
+
+            tabBar.selectedTab = .profile
+            tabBar.profile.settings = SettingsReducer.State(
+                appLockSetup: AppLockSetupReducer.State(
+                    isBiometricAvailable: true,
+                    isBiometricEnabled: true,
+                    mode: .setup
+                ),
+                isAppLockEnabled: false,
+                isBiometricUnlockEnabled: true,
+                isAnonymousUser: false,
+                supportedBiometry: .faceID
+            )
+            $0.destination = .tabBar(tabBar)
+        }
+
+        #expect(store.state.pendingDeepLink == nil)
+
+        guard let tabBar = tabBarState(
+            from: store.state,
+            issue: "Expected tabBar destination after app lock setup deeplink."
+        ) else {
+            return
+        }
+
+        #expect(tabBar.selectedTab == .profile)
+        #expect(tabBar.profile.settings?.appLockSetup?.mode == .setup)
+    }
+
+    @Test
+    func sessionLoadedWithAppLockRoutesToUnlock() async {
+        let store = makeStore(
+            withDependencies: {
+                $0.appLockClient = AppLockClient(
+                    disable: {},
+                    hasPIN: { true },
+                    isBiometricUnlockEnabled: { true },
+                    isEnabled: { true },
+                    savePIN: { _ in },
+                    setBiometricUnlockEnabled: { _ in },
+                    verifyPIN: { $0 == "1234" }
+                )
+                $0.biometricAuthClient = BiometricAuthClient(
+                    authenticate: { _ in },
+                    biometryType: { .faceID }
+                )
+            }
+        )
+
+        await store.send(.sessionLoaded(didCompleteOnboarding: true, isNewUser: false)) {
+            $0.destination = .unlock(
+                AppUnlockReducer.State(
+                    isBiometricUnlockEnabled: true,
+                    supportedBiometry: .faceID
+                )
+            )
+            $0.postUnlockDestination = .tabBar(TabBarReducer.State())
+        }
+    }
+
+    @Test
+    func sessionLoadedWithoutAppLockPresentsSetupFlow() async {
+        let currentUser = UserModel(
+            userId: "user-1",
+            email: "lukas@example.com",
+            isAnonymous: false,
+            didCompleteOnboarding: true,
+            profileColorHex: "#33FF57"
+        )
+
+        let store = makeStore(
+            withDependencies: {
+                $0.appLockClient = AppLockClient(
+                    disable: {},
+                    hasPIN: { false },
+                    isBiometricUnlockEnabled: { true },
+                    isEnabled: { false },
+                    savePIN: { _ in },
+                    setBiometricUnlockEnabled: { _ in },
+                    verifyPIN: { _ in false }
+                )
+                $0.biometricAuthClient = BiometricAuthClient(
+                    authenticate: { _ in },
+                    biometryType: { .faceID }
+                )
+                $0.userManager = UserManager(
+                    remoteService: MockUserService(user: currentUser),
+                    localService: MockFileManagerUserPersistence(user: currentUser)
+                )
+            }
+        )
+
+        await store.send(.sessionLoaded(didCompleteOnboarding: true, isNewUser: false)) {
+            $0.pendingDeepLink = nil
+            var tabBar = TabBarReducer.State()
+            tabBar.selectedTab = .profile
+            tabBar.profile.settings = SettingsReducer.State(
+                appLockSetup: AppLockSetupReducer.State(
+                    isBiometricAvailable: true,
+                    isBiometricEnabled: true,
+                    mode: .setup
+                ),
+                isAppLockEnabled: false,
+                isBiometricUnlockEnabled: true,
+                isAnonymousUser: tabBar.profile.isAnonymousUser,
+                supportedBiometry: .faceID
+            )
+            $0.destination = .tabBar(tabBar)
+        }
+    }
+
+    @Test
+    func unlockSuccessRoutesToStoredDestination() async {
+        let store = makeStore(
+            initialState: AppReducer.State(
+                destination: .unlock(
+                    AppUnlockReducer.State(
+                        isBiometricUnlockEnabled: true,
+                        supportedBiometry: .faceID
+                    )
+                ),
+                postUnlockDestination: .tabBar(TabBarReducer.State())
+            )
+        )
+
+        await store.send(.destination(.unlock(.delegate(.didUnlock)))) {
+            $0.destination = .tabBar(TabBarReducer.State())
+            $0.postUnlockDestination = nil
+        }
+    }
+
+    @Test
+    func onboardingFinishWithAnonymousUserRoutesToTabBarWithoutAppLockSetup() async {
+        let currentUser = UserModel(
+            userId: "anonymous-user",
+            isAnonymous: true,
+            didCompleteOnboarding: true,
+            profileColorHex: "#33FF57"
+        )
+
+        let store = makeStore(
+            initialState: AppReducer.State(
+                destination: .onboarding(OnboardingReducer.State())
+            ),
+            withDependencies: {
+                $0.appLockClient = AppLockClient(
+                    disable: {},
+                    hasPIN: { false },
+                    isBiometricUnlockEnabled: { true },
+                    isEnabled: { false },
+                    savePIN: { _ in },
+                    setBiometricUnlockEnabled: { _ in },
+                    verifyPIN: { _ in false }
+                )
+                $0.biometricAuthClient = BiometricAuthClient(
+                    authenticate: { _ in },
+                    biometryType: { .faceID }
+                )
+                $0.userManager = UserManager(
+                    remoteService: MockUserService(user: currentUser),
+                    localService: MockFileManagerUserPersistence(user: currentUser)
+                )
+            }
+        )
+
+        await store.send(.destination(.onboarding(.delegate(.didFinish)))) {
+            $0.destination = .tabBar(TabBarReducer.State())
+        }
+    }
+
     private func makeStore(
-        initialState: AppReducer.State = AppReducer.State()
+        initialState: AppReducer.State = AppReducer.State(),
+        withDependencies updateDependencies: (inout DependencyValues) -> Void = { _ in }
     ) -> TestStore<AppReducer.State, AppReducer.Action> {
         TestStore(
             initialState: initialState
         ) {
             AppReducer()
+        } withDependencies: {
+            updateDependencies(&$0)
         }
     }
 

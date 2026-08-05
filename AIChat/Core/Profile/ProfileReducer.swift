@@ -7,6 +7,7 @@
 
 import ComposableArchitecture
 import Foundation
+import IdentifiedCollections
 
 @Reducer
 struct ProfileReducer {
@@ -24,7 +25,7 @@ struct ProfileReducer {
         var currentUser: UserModel? = .mock
         @Presents var createAvatar: CreateAvatarReducer.State?
         var isLoading: Bool = true
-        var myAvatars: [AvatarModel] = []
+        var myAvatars: IdentifiedArrayOf<AvatarModel> = []
         var path = StackState<Path.State>()
         @Presents var settings: SettingsReducer.State?
 
@@ -74,7 +75,7 @@ struct ProfileReducer {
 
             case .loadDataResult(let avatars):
                 state.isLoading = false
-                state.myAvatars = avatars
+                state.myAvatars = IdentifiedArray(uniqueElements: avatars)
                 return .none
 
             case .settingsButtonTapped:
@@ -94,16 +95,17 @@ struct ProfileReducer {
                 state.path.append(
                     .chat(
                         ChatReducer.State(
-                            currentUser: state.currentUser,
                             avatar: avatar,
-                            avatarId: avatar.avatarId
+                            avatarId: avatar.avatarId,
+                            currentUser: state.currentUser
                         )
                     )
                 )
                 return .none
 
             case .deleteAvatar(let indexSet):
-                guard let index = indexSet.first else {
+                guard let index = indexSet.first
+                else {
                     return .none
                 }
                 state.myAvatars.remove(at: index)

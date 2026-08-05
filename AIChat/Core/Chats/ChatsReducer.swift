@@ -6,6 +6,7 @@
 //
 
 import ComposableArchitecture
+import LoadableAccessorMacros
 
 @Reducer
 struct ChatsReducer {
@@ -16,10 +17,11 @@ struct ChatsReducer {
     }
 
     @ObservableState
+    @LoadableAccessors
     struct State: Equatable {
-        var chats: [ChatModel] = ChatModel.mocks
+        var chatsResource: Loadable<[ChatModel]> = .loaded(ChatModel.mocks)
         var path = StackState<Path.State>()
-        var recentAvatars: [AvatarModel] = AvatarModel.mocks
+        var recentAvatarsResource: Loadable<[AvatarModel]> = .loaded(AvatarModel.mocks)
     }
 
     enum Action {
@@ -47,7 +49,8 @@ struct ChatsReducer {
                     .chat(
                         ChatReducer.State(
                             avatar: state.recentAvatars.first { $0.avatarId == chat.avatarId },
-                            avatarId: chat.avatarId
+                            avatarId: chat.avatarId,
+                            chatId: chat.id
                         )
                     )
                 )

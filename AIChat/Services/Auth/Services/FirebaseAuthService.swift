@@ -1,12 +1,11 @@
 //
-//  Untitled.swift
+//  FirebaseAuthService.swift
 //  AIChat
 //
 //  Created by macbook on 16.01.2025.
 //
 import FirebaseAuth
 import SwiftUI
-import SignInAppleAsync
 
 struct FirebaseAuthService: AuthService {
     
@@ -40,38 +39,37 @@ struct FirebaseAuthService: AuthService {
             throw mapError(error)
         }
     }
-    
-    func signInApple() async throws -> (user: UserAuthInfo, isNewUser: Bool) {
-        let helper = await SignInWithAppleHelper()
-        do {
-            let response = try await helper.signIn()
-            let credential = OAuthProvider.credential(
-                providerID: AuthProviderID.apple,
-                idToken: response.token,
-                rawNonce: response.nonce
-            )
 
+    func createUser(email: String, password: String) async throws -> (user: UserAuthInfo, isNewUser: Bool) {
+        do {
+            let credential = EmailAuthProvider.credential(
+                withEmail: email,
+                password: password
+            )
             if let user = Auth.auth().currentUser, user.isAnonymous {
-                do {
-                    let result = try await user.link(with: credential)
-                    return result.asAuthInfo
-                } catch let error as NSError {
-                    let authError = AuthErrorCode(rawValue: error.code)
-                    switch authError {
-                    case .providerAlreadyLinked, .credentialAlreadyInUse:
-                        if let secondaryCredential = error.userInfo["FIRAuthErrorUserInfoUpdatedCredentialKey"] as? AuthCredential {
-                            let result = try await Auth.auth().signIn(with: secondaryCredential)
-                            return result.asAuthInfo
-                        }
-                    default:
-                        break
-                    }
-                    throw mapError(error)
-                }
+                let result = try await user.link(with: credential)
+                return result.asAuthInfo
             }
 
-            let result = try await Auth.auth().signIn(with: credential)
+            let result = try await Auth.auth().createUser(withEmail: email, password: password)
             return result.asAuthInfo
+        } catch {
+            throw mapError(error)
+        }
+    }
+
+    func signIn(email: String, password: String) async throws -> (user: UserAuthInfo, isNewUser: Bool) {
+        do {
+            let result = try await Auth.auth().signIn(withEmail: email, password: password)
+            return result.asAuthInfo
+        } catch {
+            throw mapError(error)
+        }
+    }
+
+    func sendPasswordReset(email: String) async throws {
+        do {
+            try await Auth.auth().sendPasswordReset(withEmail: email)
         } catch {
             throw mapError(error)
         }
@@ -100,12 +98,20 @@ struct FirebaseAuthService: AuthService {
         let nsError = error as NSError
         if let authError = AuthErrorCode(rawValue: nsError.code) {
             switch authError {
+            case .emailAlreadyInUse:
+                return .emailAlreadyInUse
+            case .invalidCredential, .userNotFound:
+                return .invalidCredential
+            case .invalidEmail:
+                return .invalidEmail
             case .networkError:
                 return .network
             case .requiresRecentLogin:
                 return .requiresRecentLogin
-            case .userNotFound:
-                return .notSignedIn
+            case .wrongPassword:
+                return .wrongPassword
+            case .weakPassword:
+                return .weakPassword
             default:
                 return .unknown(nsError.localizedDescription)
             }
